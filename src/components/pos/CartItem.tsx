@@ -31,9 +31,9 @@ export const CartItem: React.FC<CartItemProps> = ({ item }) => {
     [item.discountType]
   );
 
-  const hasDiscount = normalizedDiscountType !== 'none' && Number(item.discountValue || 0) > 0;
+  const hasDiscount = normalizedDiscountType !== 'none' && Math.round(Number(item.discountValue || 0)) > 0;
 
-  const originalLineTotal = Number((item.price * item.quantity).toFixed(2));
+  const originalLineTotal = Math.round(item.price * item.quantity);
   const imageUrl = String(item.product.image_url || '').trim();
   const showPlaceholder = !imageUrl || imageError;
 
@@ -50,7 +50,7 @@ export const CartItem: React.FC<CartItemProps> = ({ item }) => {
   };
 
   const applyDiscount = (type: 'percent' | 'amount') => {
-    const val = parseFloat(discountInput);
+    const val = Math.round(parseFloat(discountInput));
 
     if (!isNaN(val) && val >= 0) {
       updateItemDiscount(item.product.id, type, val);
@@ -96,14 +96,14 @@ export const CartItem: React.FC<CartItemProps> = ({ item }) => {
               <h3 className="line-clamp-1">{item.product.name}</h3>
               <div className="text-right">
                 {hasDiscount && (
-                  <p className="text-xs text-gray-400 line-through">${originalLineTotal.toFixed(2)}</p>
+                  <p className="text-xs text-gray-400 line-through">${originalLineTotal}</p>
                 )}
-                <p className="ml-4">${item.subtotal.toFixed(2)}</p>
+                <p className="ml-4">${item.subtotal}</p>
               </div>
             </div>
 
             <p className="mt-1 text-xs text-gray-500">
-              {item.priceType === 'minorista' ? 'Minorista' : 'Mayorista'} • ${item.price.toFixed(2)} / c/u
+              {item.priceType === 'minorista' ? 'Minorista' : 'Mayorista'} • ${item.price} / c/u
             </p>
 
             {hasDiscount && (
@@ -111,7 +111,7 @@ export const CartItem: React.FC<CartItemProps> = ({ item }) => {
                 Descuento:{' '}
                 {normalizedDiscountType === 'percent'
                   ? `${item.discountValue}%`
-                  : `$${Number(item.discountValue || 0).toFixed(2)}`}
+                  : `$${Math.round(Number(item.discountValue || 0))}`}
               </p>
             )}
           </div>

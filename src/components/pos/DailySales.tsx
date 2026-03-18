@@ -23,7 +23,7 @@ type SaleRow = {
 };
 
 const formatCurrency = (value: number | null | undefined) => {
-  return `$${Number(value || 0).toFixed(2)}`;
+  return `$${Math.round(Number(value || 0))}`;
 };
 
 const formatTime = (value?: string) => {

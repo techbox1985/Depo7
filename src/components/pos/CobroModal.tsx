@@ -95,7 +95,7 @@ export const CobroModal: React.FC<CobroModalProps> = ({
   const { promotions } = usePromotionsStore();
 
   const baseTotal = useMemo(() => {
-    if (priceList === 'carrito') return Number(cartTotal.toFixed(2));
+    if (priceList === 'carrito') return Math.round(cartTotal);
 
     const total = items.reduce((acc, item) => {
       const baseUnitPrice = getEffectivePrice(item.product, priceList as 'minorista' | 'mayorista', promotions);
@@ -108,7 +108,7 @@ export const CobroModal: React.FC<CobroModalProps> = ({
             ? 'amount'
             : 'none';
 
-      const safeDiscountValue = Number(item.discountValue || 0);
+      const safeDiscountValue = Math.round(Number(item.discountValue || 0));
 
       if (normalizedType === 'percent' && safeDiscountValue > 0) {
         lineDiscountAmount = baseUnitPrice * (safeDiscountValue / 100);
@@ -120,7 +120,7 @@ export const CobroModal: React.FC<CobroModalProps> = ({
       return acc + finalUnitPrice * item.quantity;
     }, 0);
 
-    return Number(total.toFixed(2));
+    return Math.round(total);
   }, [items, cartTotal, priceList]);
 
   const finalTotal = useMemo(() => {
@@ -132,7 +132,7 @@ export const CobroModal: React.FC<CobroModalProps> = ({
       total = Math.max(0, baseTotal - discountValue);
     }
 
-    return Number(total.toFixed(2));
+    return Math.round(total);
   }, [baseTotal, discountType, discountValue]);
 
   useEffect(() => {
@@ -143,13 +143,13 @@ export const CobroModal: React.FC<CobroModalProps> = ({
       setAmountCash(0);
       setAmountDigital(finalTotal);
     } else if (paymentMethod === 'mixto') {
-      setAmountDigital(Math.max(0, Number((finalTotal - amountCash).toFixed(2))));
+      setAmountDigital(Math.max(0, Math.round(finalTotal - amountCash)));
     }
   }, [paymentMethod, finalTotal]);
 
   useEffect(() => {
     if (paymentMethod === 'mixto') {
-      setAmountDigital(Math.max(0, Number((finalTotal - amountCash).toFixed(2))));
+      setAmountDigital(Math.max(0, Math.round(finalTotal - amountCash)));
     }
   }, [amountCash, finalTotal, paymentMethod]);
 
@@ -444,7 +444,7 @@ export const CobroModal: React.FC<CobroModalProps> = ({
                           </div>
                           <Input
                             type="number"
-                            value={amountDigital.toFixed(2)}
+                            value={amountDigital}
                             disabled
                             className="bg-gray-50 pl-10"
                           />
@@ -460,10 +460,10 @@ export const CobroModal: React.FC<CobroModalProps> = ({
                 <div className="text-right">
                   {discountType !== 'ninguno' && (
                     <div className="mb-1 text-sm text-gray-400 line-through">
-                      ${baseTotal.toFixed(2)}
+                      ${baseTotal}
                     </div>
                   )}
-                  <span className="text-3xl font-bold">${finalTotal.toFixed(2)}</span>
+                  <span className="text-3xl font-bold">${finalTotal}</span>
                 </div>
               </div>
             </div>
