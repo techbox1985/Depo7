@@ -1,0 +1,5 @@
+{
+  "name": "POS System",
+  "description": "A professional Point of Sale system built with React, Zustand, and Supabase.",
+  "requestFramePermissions": []
+}
