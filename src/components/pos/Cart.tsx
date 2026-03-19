@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useProductsStore } from '../../store/useProductsStore';
 import { CobroModal } from './CobroModal';
+import { formatMoney } from '../../utils/money';
 
 type ModalStatus = 'completada' | 'pendiente' | 'presupuesto';
 type SaleDiscountType = 'ninguno' | 'porcentaje' | 'fijo';
@@ -37,8 +38,6 @@ export type PostActionData = {
   total: number;
   createdAt: string;
 };
-
-const formatMoney = (value: number) => `$${Math.round(Number(value || 0))}`;
 
 const getDocumentTitle = (status: ModalStatus) => {
   if (status === 'completada') return 'Ticket de Venta';

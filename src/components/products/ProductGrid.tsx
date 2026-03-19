@@ -10,6 +10,7 @@ import { productsService } from '../../services/productsService';
 import { ProductFormModal } from './ProductFormModal';
 import { ProductHistoryModal } from './ProductHistoryModal';
 import { Product } from '../../types';
+import { formatMoney } from '../../utils/money';
 
 import { getBasePrice } from '../../utils/priceUtils';
 
@@ -291,14 +292,14 @@ export const ProductGrid: React.FC = React.memo(() => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ${costo.toFixed(2)}
+                        {formatMoney(costo)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">${minPrice.toFixed(2)}</div>
+                        <div className="text-sm text-gray-900">{formatMoney(minPrice)}</div>
                         <div className="text-xs text-gray-500">{minMargin}% mg</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">${mayPrice.toFixed(2)}</div>
+                        <div className="text-sm text-gray-900">{formatMoney(mayPrice)}</div>
                         <div className="text-xs text-gray-500">{mayMargin}% mg</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

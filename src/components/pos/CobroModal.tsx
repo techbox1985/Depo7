@@ -102,9 +102,9 @@ export const CobroModal: React.FC<CobroModalProps> = ({
 
       let lineDiscountAmount = 0;
       const normalizedType =
-        item.discountType === 'percent' || item.discountType === 'porcentaje'
+        item.discountType === 'percent'
           ? 'percent'
-          : item.discountType === 'amount' || item.discountType === 'fijo'
+          : item.discountType === 'amount'
             ? 'amount'
             : 'none';
 

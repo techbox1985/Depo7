@@ -1,11 +1,18 @@
 import { supabase } from './supabaseClient';
 import { Product } from '../types';
+import { offlineDb } from './offlineDb';
 
 export const productsService = {
   async getProducts(): Promise<Product[]> {
-    const { data, error } = await supabase.from('products').select('*, product_prices(*, price_list:price_lists(*))');
-    if (error) throw error;
-    return data || [];
+    try {
+      const { data, error } = await supabase.from('products').select('*, product_prices(*, price_list:price_lists(*))');
+      if (error) throw error;
+      if (data) await offlineDb.saveProducts(data);
+      return data || [];
+    } catch (error) {
+      console.warn('Supabase fetch failed, falling back to offline cache', error);
+      return await offlineDb.getProducts();
+    }
   },
 
   async getProductsPaginated(offset: number, limit: number): Promise<Product[]> {

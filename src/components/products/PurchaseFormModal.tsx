@@ -7,6 +7,7 @@ import { productsService } from '../../services/productsService';
 import { suppliersService } from '../../services/suppliersService';
 import { useProductsStore } from '../../store/useProductsStore';
 import { Plus, Trash2, Search } from 'lucide-react';
+import { formatMoney, roundMoney } from '../../utils/money';
 
 interface PurchaseFormModalProps {
   isOpen: boolean;
@@ -86,12 +87,12 @@ export const PurchaseFormModal: React.FC<PurchaseFormModalProps> = ({
   };
 
   const calculateTotal = useCallback(() => {
-    return items.reduce((acc, item) => acc + (Number(item.totalPrice) || 0), 0);
+    return items.reduce((acc, item) => acc + roundMoney(Number(item.totalPrice) || 0), 0);
   }, [items]);
 
   const total = calculateTotal();
-  const totalPaid = (Number(paidCash) || 0) + (Number(paidDigital) || 0);
-  const debt = total - totalPaid;
+  const totalPaid = roundMoney((Number(paidCash) || 0) + (Number(paidDigital) || 0));
+  const debt = roundMoney(total - totalPaid);
 
   const handleAddItem = () => {
     setItems([
@@ -121,11 +122,11 @@ export const PurchaseFormModal: React.FC<PurchaseFormModalProps> = ({
       
       // Auto-calculate logic
       if (field === 'quantity' && updatedItem.unitPrice !== '') {
-        updatedItem.totalPrice = Number(value) * Number(updatedItem.unitPrice);
+        updatedItem.totalPrice = roundMoney(Number(value) * Number(updatedItem.unitPrice));
       } else if (field === 'unitPrice' && updatedItem.quantity !== '') {
-        updatedItem.totalPrice = Number(value) * Number(updatedItem.quantity);
+        updatedItem.totalPrice = roundMoney(Number(value) * Number(updatedItem.quantity));
       } else if (field === 'totalPrice' && updatedItem.quantity !== '' && Number(updatedItem.quantity) > 0) {
-        updatedItem.unitPrice = Number(value) / Number(updatedItem.quantity);
+        updatedItem.unitPrice = roundMoney(Number(value) / Number(updatedItem.quantity));
       }
       
       return updatedItem;
@@ -164,13 +165,13 @@ export const PurchaseFormModal: React.FC<PurchaseFormModalProps> = ({
         supplier_id: supplierId,
         supplier_name: supplierName,
         date: new Date(purchaseDate).toISOString(),
-        paid_cash: Number(paidCash) || 0,
-        paid_digital: Number(paidDigital) || 0,
+        paid_cash: roundMoney(Number(paidCash) || 0),
+        paid_digital: roundMoney(Number(paidDigital) || 0),
         items: validItems.map(item => ({
           product_id: item.product!.id,
           product_name: item.product!.name,
-          quantity: Number(item.quantity),
-          price: Number(item.unitPrice),
+          quantity: Math.round(Number(item.quantity)),
+          price: roundMoney(Number(item.unitPrice)),
           expiration_date: item.expirationDate || null
         }))
       });
@@ -284,7 +285,7 @@ export const PurchaseFormModal: React.FC<PurchaseFormModalProps> = ({
                         type="number"
                         min="1"
                         value={item.quantity}
-                        onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value === '' ? '' : Number(e.target.value))}
+                        onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value === '' ? '' : Math.round(Number(e.target.value)))}
                         required
                       />
                     </td>
@@ -292,9 +293,9 @@ export const PurchaseFormModal: React.FC<PurchaseFormModalProps> = ({
                       <Input
                         type="number"
                         min="0"
-                        step="0.01"
+                        step="1"
                         value={item.unitPrice}
-                        onChange={(e) => handleItemChange(item.id, 'unitPrice', e.target.value === '' ? '' : Number(e.target.value))}
+                        onChange={(e) => handleItemChange(item.id, 'unitPrice', e.target.value === '' ? '' : Math.round(Number(e.target.value)))}
                         required
                       />
                     </td>
@@ -302,9 +303,9 @@ export const PurchaseFormModal: React.FC<PurchaseFormModalProps> = ({
                       <Input
                         type="number"
                         min="0"
-                        step="0.01"
+                        step="1"
                         value={item.totalPrice}
-                        onChange={(e) => handleItemChange(item.id, 'totalPrice', e.target.value === '' ? '' : Number(e.target.value))}
+                        onChange={(e) => handleItemChange(item.id, 'totalPrice', e.target.value === '' ? '' : Math.round(Number(e.target.value)))}
                         required
                       />
                     </td>
@@ -335,7 +336,7 @@ export const PurchaseFormModal: React.FC<PurchaseFormModalProps> = ({
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
           <div className="flex justify-between items-center mb-4">
             <span className="text-sm font-medium text-gray-700">Total de la Compra:</span>
-            <span className="text-xl font-bold text-gray-900">${total.toFixed(2)}</span>
+            <span className="text-xl font-bold text-gray-900">{formatMoney(total)}</span>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -343,24 +344,24 @@ export const PurchaseFormModal: React.FC<PurchaseFormModalProps> = ({
               label="Pagado en Efectivo"
               type="number"
               min="0"
-              step="0.01"
+              step="1"
               value={paidCash}
-              onChange={(e) => setPaidCash(e.target.value === '' ? '' : Number(e.target.value))}
+              onChange={(e) => setPaidCash(e.target.value === '' ? '' : Math.round(Number(e.target.value)))}
             />
             <Input
               label="Pagado Digital / Transferencia"
               type="number"
               min="0"
-              step="0.01"
+              step="1"
               value={paidDigital}
-              onChange={(e) => setPaidDigital(e.target.value === '' ? '' : Number(e.target.value))}
+              onChange={(e) => setPaidDigital(e.target.value === '' ? '' : Math.round(Number(e.target.value)))}
             />
           </div>
 
           <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
             <span className="text-sm font-medium text-gray-700">Deuda Pendiente:</span>
             <span className={`text-lg font-bold ${debt > 0 ? 'text-red-600' : 'text-green-600'}`}>
-              ${Math.max(0, debt).toFixed(2)}
+              {formatMoney(Math.max(0, debt))}
             </span>
           </div>
         </div>

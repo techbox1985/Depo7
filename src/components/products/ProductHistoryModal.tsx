@@ -4,6 +4,7 @@ import { Product } from '../../types';
 import { productsService } from '../../services/productsService';
 import { Spinner } from '../ui/Spinner';
 import { useProductsStore } from '../../store/useProductsStore';
+import { formatMoney } from '../../utils/money';
 
 interface ProductHistoryModalProps {
   isOpen: boolean;
@@ -105,8 +106,8 @@ export const ProductHistoryModal: React.FC<ProductHistoryModalProps> = React.mem
                           {item.sales?.customer_name || 'Consumidor Final'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${item.price.toFixed(2)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${(item.quantity * item.price).toFixed(2)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{formatMoney(item.price)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{formatMoney(item.quantity * item.price)}</td>
                       </tr>
                     );
                   })}
@@ -145,19 +146,19 @@ export const ProductHistoryModal: React.FC<ProductHistoryModalProps> = React.mem
                           {item.purchases?.supplier_name || '-'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${item.price.toFixed(2)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${(item.quantity * item.price).toFixed(2)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{formatMoney(item.price)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{formatMoney(item.quantity * item.price)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                           {item.expiration_date ? new Date(item.expiration_date).toLocaleDateString() : '-'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                          ${(item.purchases?.paid_cash || 0).toFixed(2)}
+                          {formatMoney(item.purchases?.paid_cash || 0)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                          ${(item.purchases?.paid_digital || 0).toFixed(2)}
+                          {formatMoney(item.purchases?.paid_digital || 0)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                          ${(item.purchases?.debt || 0).toFixed(2)}
+                          {formatMoney(item.purchases?.debt || 0)}
                         </td>
                       </tr>
                     );

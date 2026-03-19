@@ -1,7 +1,8 @@
 import { Product, Promotion } from '../types';
+import { roundMoney } from './money';
 
 const getSafeNumber = (value: unknown): number => {
-  const parsed = Number(value);
+  const parsed = Math.round(Number(value));
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
@@ -63,5 +64,5 @@ export const getEffectivePrice = (
 
   const effectivePrice = basePrice * (1 - bestDiscountPercentage / 100);
 
-  return effectivePrice > 0 ? Number(effectivePrice.toFixed(2)) : 0;
+  return effectivePrice > 0 ? roundMoney(effectivePrice) : 0;
 };

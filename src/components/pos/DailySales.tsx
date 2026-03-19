@@ -112,14 +112,6 @@ export const DailySales: React.FC = () => {
         )
         .order('creado_en', { ascending: false });
 
-      if (currentSession) {
-        query = query.eq('caja_id', currentSession.id);
-      } else {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        query = query.gte('creado_en', today.toISOString());
-      }
-
       const { data, error } = await query;
 
       if (error) {
@@ -135,13 +127,33 @@ export const DailySales: React.FC = () => {
     fetchSales();
   }, [currentSession]);
 
+  const [search, setSearch] = useState('');
+  const [originFilter, setOriginFilter] = useState('todos');
+  const [statusFilter, setStatusFilter] = useState('todos');
+
+  const filteredSales = useMemo(() => {
+    return sales.filter((s) => {
+      const matchesSearch = search === '' || (s.customers?.name?.toLowerCase().includes(search.toLowerCase()) || s.codigo_venta?.toLowerCase().includes(search.toLowerCase()));
+      const matchesStatus = statusFilter === 'todos' || s.estado === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [sales, search, statusFilter]);
+
+  const summary = useMemo(() => {
+    const total = sales.reduce((acc, s) => acc + (s.total || 0), 0);
+    const count = sales.length;
+    const pos = sales.filter(s => !s.codigo_venta?.startsWith('PED')).length;
+    const pedidos = sales.filter(s => s.codigo_venta?.startsWith('PED')).length;
+    return { total, count, pos, pedidos };
+  }, [sales]);
+
   const groupedSales = useMemo(() => {
     return {
-      completada: sales.filter((s) => s.estado === 'completada'),
-      pendiente: sales.filter((s) => s.estado === 'pendiente'),
-      presupuesto: sales.filter((s) => s.estado === 'presupuesto'),
+      completada: filteredSales.filter((s) => s.estado === 'completada'),
+      pendiente: filteredSales.filter((s) => s.estado === 'pendiente'),
+      presupuesto: filteredSales.filter((s) => s.estado === 'presupuesto'),
     };
-  }, [sales]);
+  }, [filteredSales]);
 
   const handleReprint = async (sale: SaleRow) => {
     try {
@@ -277,6 +289,12 @@ export const DailySales: React.FC = () => {
                       </td>
 
                       <td className="px-3 py-2 whitespace-nowrap text-gray-600">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${sale.codigo_venta?.startsWith('PED') ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {sale.codigo_venta?.startsWith('PED') ? 'Pedido' : 'POS'}
+                        </span>
+                      </td>
+
+                      <td className="px-3 py-2 whitespace-nowrap text-gray-600">
                         {getPaymentLabel(sale)}
                       </td>
 
@@ -324,9 +342,34 @@ export const DailySales: React.FC = () => {
 
   return (
     <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">
-        {currentSession ? 'Movimientos de Caja' : 'Movimientos del Día'}
-      </h3>
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <p className="text-sm text-gray-500">Total Vendido</p>
+          <p className="text-xl font-bold text-gray-900">{formatCurrency(summary.total)}</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <p className="text-sm text-gray-500">Cantidad</p>
+          <p className="text-xl font-bold text-gray-900">{summary.count}</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <p className="text-sm text-gray-500">Ventas POS</p>
+          <p className="text-xl font-bold text-gray-900">{summary.pos}</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <p className="text-sm text-gray-500">Ventas Pedido</p>
+          <p className="text-xl font-bold text-gray-900">{summary.pedidos}</p>
+        </div>
+      </div>
+
+      <div className="flex gap-4 mb-6">
+        <input type="text" placeholder="Buscar cliente o código..." value={search} onChange={e => setSearch(e.target.value)} className="p-2 border border-gray-300 rounded-lg flex-1" />
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="p-2 border border-gray-300 rounded-lg">
+          <option value="todos">Todos los estados</option>
+          <option value="completada">Completada</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="presupuesto">Presupuesto</option>
+        </select>
+      </div>
 
       {sales.length === 0 ? (
         <div className="text-center py-10 bg-white rounded-xl border border-gray-200">

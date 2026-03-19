@@ -5,6 +5,7 @@ import { Spinner } from '../ui/Spinner';
 import { Button } from '../ui/Button';
 import { Search, FileText, Clock, Eye, CheckCircle } from 'lucide-react';
 import { OrderDetailsModal } from './OrderDetailsModal';
+import { formatMoney } from '../../utils/money';
 
 export const OrdersView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'pendiente' | 'presupuesto'>('pendiente');
@@ -239,7 +240,7 @@ const OrderRow = React.memo(({
         {order.customers?.name || 'Consumidor Final'}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-        ${Number(order.total).toFixed(2)}
+        {formatMoney(Number(order.total))}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
         <div className="flex justify-end gap-2">

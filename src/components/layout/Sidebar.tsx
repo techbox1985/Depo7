@@ -7,10 +7,10 @@ const navItems = [
   { name: 'Panel', path: '/', icon: LayoutDashboard },
   { name: 'Punto de venta', path: '/pos', icon: ShoppingCart },
   { name: 'Productos', path: '/products', icon: Package },
+  { name: 'Listas de Precios', path: '/price-lists', icon: ListOrdered },
   { name: 'Promociones', path: '/promotions', icon: Tag },
-  { name: 'Caja', path: '/cash', icon: ShoppingCart }, // Placeholder
-  { name: 'Historial', path: '/history', icon: FileText }, // Placeholder
-  { name: 'Cierres de Caja', path: '/closures', icon: FileText }, // Placeholder
+  { name: 'Historial de Ventas', path: '/history', icon: FileText },
+  { name: 'Cierres de Caja', path: '/closures', icon: FileText },
 ];
 
 const devNavItems = [

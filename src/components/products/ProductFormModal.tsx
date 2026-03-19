@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { Product, PriceList, ProductPrice } from '../../types';
 import { useProducts } from '../../hooks/useProducts';
 import { priceListsService } from '../../services/priceListsService';
+import { roundMoney, formatMoney } from '../../utils/money';
 
 interface ProductFormModalProps {
   isOpen: boolean;
@@ -28,7 +29,7 @@ type FormErrors = {
 };
 
 const getSafeNumber = (value: unknown, fallback = 0) => {
-  const parsed = Number(value);
+  const parsed = Math.round(Number(value));
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
@@ -155,7 +156,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
 
     const getSuggestedPrice = (marginPercent: number) => {
       const costo = getSafeNumber(formData.costo, 0);
-      return Number((costo * (1 + marginPercent / 100)).toFixed(2));
+      return roundMoney(costo * (1 + marginPercent / 100));
     };
 
     const handlePriceChange = (
@@ -413,7 +414,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
                 type="number"
                 required
                 min="0"
-                step="0.01"
+                step="1"
                 value={formData.costo ?? 0}
                 onChange={(e) => {
                   setFormData({ ...formData, costo: getSafeNumber(e.target.value, 0) });
@@ -475,7 +476,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
                         {list.name} (Margen: {margin}%)
                       </span>
                       <span className="text-xs text-gray-500">
-                        Precio sugerido: ${calculatedPrice.toFixed(2)}
+                        Precio sugerido: {formatMoney(calculatedPrice)}
                       </span>
                     </div>
 
@@ -484,7 +485,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
                         label="Precio Final ($) *"
                         type="number"
                         min="0"
-                        step="0.01"
+                        step="1"
                         value={priceData.final_price ?? 0}
                         onChange={(e) =>
                           handlePriceChange(list, 'final_price', getSafeNumber(e.target.value, 0))

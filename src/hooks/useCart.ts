@@ -4,6 +4,7 @@ import { usePromotionsStore } from '../store/usePromotionsStore';
 import { Product } from '../types';
 import { supabase } from '../services/supabaseClient';
 import { getBasePrice, getEffectivePrice } from '../utils/priceUtils';
+import { roundMoney } from '../utils/money';
 
 type PriceListType = 'minorista' | 'mayorista' | 'carrito';
 type LineDiscountType = 'none' | 'percent' | 'amount';
@@ -104,7 +105,7 @@ export const useCart = () => {
         let itemDiscountAmount = 0;
 
         const normalizedDiscountType = toLineDiscountType(item.discountType);
-        const safeDiscountValue = Number(item.discountValue) || 0;
+        const safeDiscountValue = Math.round(Number(item.discountValue) || 0);
 
         if (normalizedDiscountType === 'percent' && safeDiscountValue > 0) {
           itemDiscountAmount = basePrice * (safeDiscountValue / 100);
@@ -114,18 +115,18 @@ export const useCart = () => {
           finalItemPrice = Math.max(0, basePrice - itemDiscountAmount);
         }
 
-        itemDiscountAmount = Math.max(0, Number(itemDiscountAmount.toFixed(2)));
-        finalItemPrice = Math.max(0, Number(finalItemPrice.toFixed(2)));
+        itemDiscountAmount = Math.max(0, roundMoney(itemDiscountAmount));
+        finalItemPrice = Math.max(0, roundMoney(finalItemPrice));
 
-        const itemSubtotal = Number((finalItemPrice * item.quantity).toFixed(2));
+        const itemSubtotal = roundMoney(finalItemPrice * Math.round(item.quantity));
         calculatedTotal += itemSubtotal;
 
         return {
           product_id: item.product.id,
           product_name: item.product.name,
-          quantity: item.quantity,
+          quantity: Math.round(item.quantity),
           price: finalItemPrice,
-          original_price: Number(originalPrice.toFixed(2)),
+          original_price: roundMoney(originalPrice),
           price_list: effectivePriceList,
           discount_type: normalizedDiscountType,
           discount_value: safeDiscountValue,
@@ -139,7 +140,7 @@ export const useCart = () => {
         calculatedTotal = Math.max(0, calculatedTotal - (options.discountValue || 0));
       }
 
-      calculatedTotal = Number(calculatedTotal.toFixed(2));
+      calculatedTotal = roundMoney(calculatedTotal);
 
       const payload = {
         p_total: calculatedTotal,

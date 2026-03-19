@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { CartItem, Product, Promotion } from '../types';
 import { getEffectivePrice, getBasePrice } from '../utils/priceUtils';
+import { roundMoney } from '../utils/money';
 
 type CartPriceList = 'minorista' | 'mayorista' | 'carrito';
 type CartDiscountType = 'none' | 'percent' | 'amount' | 'ninguno' | 'porcentaje' | 'fijo';
@@ -34,12 +35,10 @@ const normalizeDiscountType = (discountType: CartDiscountType): 'none' | 'percen
   return 'none';
 };
 
-const round2 = (value: number): number => Number((value || 0).toFixed(2));
-
 const calculateItemValues = (item: CartItem) => {
   const normalizedDiscountType = normalizeDiscountType((item.discountType as CartDiscountType) || 'none');
-  const baseUnitPrice = Number(item.price || 0);
-  const discountValue = Number(item.discountValue || 0);
+  const baseUnitPrice = Math.round(Number(item.price || 0));
+  const discountValue = Math.round(Number(item.discountValue || 0));
 
   let finalUnitPrice = baseUnitPrice;
   let discountAmount = 0;
@@ -52,17 +51,17 @@ const calculateItemValues = (item: CartItem) => {
     finalUnitPrice = Math.max(0, baseUnitPrice - discountAmount);
   }
 
-  const subtotal = finalUnitPrice * Number(item.quantity || 0);
+  const subtotal = finalUnitPrice * Math.round(Number(item.quantity || 0));
 
   return {
     normalizedDiscountType,
-    discountAmount: round2(discountAmount),
-    subtotal: round2(subtotal),
+    discountAmount: roundMoney(discountAmount),
+    subtotal: roundMoney(subtotal),
   };
 };
 
 const recalculateTotals = (items: CartItem[]) => {
-  const total = round2(items.reduce((acc, item) => acc + Number(item.subtotal || 0), 0));
+  const total = roundMoney(items.reduce((acc, item) => acc + Math.round(Number(item.subtotal || 0)), 0));
   return { subtotal: total, total };
 };
 
@@ -76,8 +75,8 @@ export const useCartStore = create<CartState>((set) => ({
     set((state) => {
       const newItems = state.items.map((item) => {
         const effectivePriceType = priceList === 'carrito' ? item.priceType : priceList;
-        const price = round2(getEffectivePrice(item.product, effectivePriceType, promotions));
-        const originalPrice = round2(getBasePrice(item.product, effectivePriceType));
+        const price = roundMoney(getEffectivePrice(item.product, effectivePriceType, promotions));
+        const originalPrice = roundMoney(getBasePrice(item.product, effectivePriceType));
 
         const updatedItem = {
           ...item,
@@ -112,8 +111,8 @@ export const useCartStore = create<CartState>((set) => ({
         (item) => item.product.id === product.id && item.priceType === effectivePriceType
       );
 
-      const price = round2(getEffectivePrice(product, effectivePriceType, promotions));
-      const originalPrice = round2(getBasePrice(product, effectivePriceType));
+      const price = roundMoney(getEffectivePrice(product, effectivePriceType, promotions));
+      const originalPrice = roundMoney(getBasePrice(product, effectivePriceType));
 
       const newItems = [...state.items];
 
@@ -121,7 +120,7 @@ export const useCartStore = create<CartState>((set) => ({
         const item = newItems[existingItemIndex];
         const updatedItem: CartItem = {
           ...item,
-          quantity: Number(item.quantity || 0) + quantity,
+          quantity: Math.round(Number(item.quantity || 0)) + Math.round(quantity),
         };
 
         const recalculated = calculateItemValues(updatedItem);
@@ -138,7 +137,7 @@ export const useCartStore = create<CartState>((set) => ({
           priceType: effectivePriceType,
           price,
           originalPrice,
-          quantity,
+          quantity: Math.round(quantity),
           subtotal: 0,
           discountType: 'none',
           discountValue: 0,
@@ -177,7 +176,7 @@ export const useCartStore = create<CartState>((set) => ({
         if (item.product.id === productId) {
           const updatedItem: CartItem = {
             ...item,
-            quantity: Math.max(0, quantity),
+            quantity: Math.max(0, Math.round(quantity)),
           };
 
           const recalculated = calculateItemValues(updatedItem);
@@ -209,7 +208,7 @@ export const useCartStore = create<CartState>((set) => ({
           const updatedItem: CartItem = {
             ...item,
             discountType: normalizedDiscountType,
-            discountValue: Number(discountValue || 0),
+            discountValue: Math.round(Number(discountValue || 0)),
           };
 
           const recalculated = calculateItemValues(updatedItem);

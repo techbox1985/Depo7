@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { Plus, AlertCircle, History } from 'lucide-react';
 import { getEffectivePrice, getBasePrice } from '../../utils/priceUtils';
 import { usePromotions } from '../../hooks/usePromotions';
+import { formatMoney } from '../../utils/money';
 
 interface ProductCardProps {
   product: Product;
@@ -129,10 +130,10 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, on
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
               {hasDiscount && (
-                <span className="text-xs text-gray-500 line-through">${(basePrice || 0).toFixed(2)}</span>
+                <span className="text-xs text-gray-500 line-through">{formatMoney(basePrice || 0)}</span>
               )}
               <span className={`text-lg font-bold ${isOutOfStock ? 'text-gray-500' : 'text-gray-900'}`}>
-                ${effectivePrice.toFixed(2)}
+                {formatMoney(effectivePrice)}
               </span>
             </div>
 

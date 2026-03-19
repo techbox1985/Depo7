@@ -5,6 +5,7 @@ import { supabase } from '../../services/supabaseClient';
 import { Spinner } from '../ui/Spinner';
 import { Button } from '../ui/Button';
 import { CheckCircle } from 'lucide-react';
+import { formatMoney } from '../../utils/money';
 
 interface OrderDetailsModalProps {
   isOpen: boolean;
@@ -62,7 +63,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, on
             </div>
             <div>
               <p className="text-gray-500 font-medium">Total</p>
-              <p className="text-gray-900 font-bold">${Number(order.total).toFixed(2)}</p>
+              <p className="text-gray-900 font-bold">{formatMoney(Number(order.total))}</p>
             </div>
           </div>
         </div>
@@ -96,13 +97,13 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, on
                         {item.quantity}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        ${item.price.toFixed(2)}
+                        {formatMoney(item.price)}
                         {item.price < item.original_price && (
                           <span className="ml-2 text-xs text-green-600 font-medium">(Promo)</span>
                         )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                        ${(item.quantity * item.price).toFixed(2)}
+                        {formatMoney(item.quantity * item.price)}
                       </td>
                     </tr>
                   ))}

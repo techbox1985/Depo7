@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { Plus, Search, FileText } from 'lucide-react';
 import { PurchaseFormModal } from '../products/PurchaseFormModal';
 import { useProductsStore } from '../../store/useProductsStore';
+import { formatMoney } from '../../utils/money';
 
 export const PurchasesList: React.FC = () => {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -118,16 +119,16 @@ export const PurchasesList: React.FC = () => {
                       {purchase.supplier_name || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      ${purchase.total.toFixed(2)}
+                      {formatMoney(purchase.total)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${(purchase.paid_cash || 0).toFixed(2)}
+                      {formatMoney(purchase.paid_cash || 0)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${(purchase.paid_digital || 0).toFixed(2)}
+                      {formatMoney(purchase.paid_digital || 0)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
-                      ${(purchase.debt || 0).toFixed(2)}
+                      {formatMoney(purchase.debt || 0)}
                     </td>
                   </tr>
                 ))}

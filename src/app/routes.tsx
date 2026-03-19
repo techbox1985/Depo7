@@ -4,6 +4,8 @@ import { supabase } from '../services/supabaseClient';
 import { Header } from '../components/layout/Header';
 import { Sidebar } from '../components/layout/Sidebar';
 import { POSView } from '../components/pos/POSView';
+import { DailySales } from '../components/pos/DailySales';
+import { CashClosures } from '../components/cash/CashClosures';
 import { ProductGrid } from '../components/products/ProductGrid';
 import { PromotionsManager } from '../components/promotions/PromotionsManager';
 import { PurchasesList } from '../components/purchases/PurchasesList';
@@ -86,6 +88,14 @@ export const router = createBrowserRouter([
       {
         path: 'promotions',
         element: <PromotionsManager />,
+      },
+      {
+        path: 'history',
+        element: <DailySales />,
+      },
+      {
+        path: 'closures',
+        element: <CashClosures />,
       },
       {
         path: 'orders',

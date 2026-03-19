@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { useCashStore } from '../../store/useCashStore';
 import { supabase } from '../../services/supabaseClient';
+import { formatMoney, roundMoney } from '../../utils/money';
 
 interface CashModalProps {
   isOpen: boolean;
@@ -61,20 +62,20 @@ export const CashModal: React.FC<CashModalProps> = ({ isOpen, onClose, type, man
           const presupuestos = data.filter((s: any) => s.estado === 'presupuesto');
 
           const cantidad_ventas = completadas.length;
-          const total_ventas = completadas.reduce((acc: number, sale: any) => acc + Number(sale.total), 0);
+          const total_ventas = completadas.reduce((acc: number, sale: any) => acc + roundMoney(sale.total), 0);
           const cantidad_pedidos = pendientes.length;
-          const total_pedidos = pendientes.reduce((acc: number, sale: any) => acc + Number(sale.total), 0);
+          const total_pedidos = pendientes.reduce((acc: number, sale: any) => acc + roundMoney(sale.total), 0);
           const cantidad_presupuestos = presupuestos.length;
-          const total_presupuestos = presupuestos.reduce((acc: number, sale: any) => acc + Number(sale.total), 0);
+          const total_presupuestos = presupuestos.reduce((acc: number, sale: any) => acc + roundMoney(sale.total), 0);
 
-          const cobrado_efectivo = completadas.reduce((acc: number, sale: any) => acc + Number(sale.monto_efectivo || 0), 0);
-          const cobrado_digital = completadas.reduce((acc: number, sale: any) => acc + Number(sale.monto_digital || 0), 0);
-          const cobrado_mercadopago = completadas.filter((s: any) => s.tipo_digital === 'mercadopago').reduce((acc: number, sale: any) => acc + Number(sale.monto_digital || 0), 0);
-          const cobrado_transferencia = completadas.filter((s: any) => s.tipo_digital === 'transferencia').reduce((acc: number, sale: any) => acc + Number(sale.monto_digital || 0), 0);
-          const cobrado_tarjeta = completadas.filter((s: any) => s.tipo_digital === 'tarjeta').reduce((acc: number, sale: any) => acc + Number(sale.monto_digital || 0), 0);
+          const cobrado_efectivo = completadas.reduce((acc: number, sale: any) => acc + roundMoney(sale.monto_efectivo || 0), 0);
+          const cobrado_digital = completadas.reduce((acc: number, sale: any) => acc + roundMoney(sale.monto_digital || 0), 0);
+          const cobrado_mercadopago = completadas.filter((s: any) => s.tipo_digital === 'mercadopago').reduce((acc: number, sale: any) => acc + roundMoney(sale.monto_digital || 0), 0);
+          const cobrado_transferencia = completadas.filter((s: any) => s.tipo_digital === 'transferencia').reduce((acc: number, sale: any) => acc + roundMoney(sale.monto_digital || 0), 0);
+          const cobrado_tarjeta = completadas.filter((s: any) => s.tipo_digital === 'tarjeta').reduce((acc: number, sale: any) => acc + roundMoney(sale.monto_digital || 0), 0);
 
-          const efectivo_esperado = Number(currentSession.open_amount) + cobrado_efectivo;
-          const totalProducts = completadas.reduce((acc: number, sale: any) => acc + Number(sale.total_productos || 0), 0);
+          const efectivo_esperado = roundMoney(currentSession.open_amount) + cobrado_efectivo;
+          const totalProducts = completadas.reduce((acc: number, sale: any) => acc + roundMoney(sale.total_productos || 0), 0);
 
           setSummary({ 
             total_sales: total_ventas, 
@@ -163,15 +164,15 @@ export const CashModal: React.FC<CashModalProps> = ({ isOpen, onClose, type, man
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Ventas Completadas ({summary.cantidad_ventas}):</span>
-                    <span className="font-medium text-gray-900">${summary.total_ventas.toFixed(2)}</span>
+                    <span className="font-medium text-gray-900">{formatMoney(summary.total_ventas)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Pedidos Pendientes ({summary.cantidad_pedidos}):</span>
-                    <span className="font-medium text-gray-900">${summary.total_pedidos.toFixed(2)}</span>
+                    <span className="font-medium text-gray-900">{formatMoney(summary.total_pedidos)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Presupuestos ({summary.cantidad_presupuestos}):</span>
-                    <span className="font-medium text-gray-900">${summary.total_presupuestos.toFixed(2)}</span>
+                    <span className="font-medium text-gray-900">{formatMoney(summary.total_presupuestos)}</span>
                   </div>
                 </div>
               </div>
@@ -182,37 +183,37 @@ export const CashModal: React.FC<CashModalProps> = ({ isOpen, onClose, type, man
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-center">
                     <span className="text-indigo-700">Monto Inicial en Efectivo:</span>
-                    <span className="font-medium text-indigo-900">${Number(currentSession?.open_amount || 0).toFixed(2)}</span>
+                    <span className="font-medium text-indigo-900">{formatMoney(currentSession?.open_amount || 0)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-indigo-700">Cobrado en Efectivo:</span>
-                    <span className="font-medium text-green-600">+ ${summary.cobrado_efectivo.toFixed(2)}</span>
+                    <span className="font-medium text-green-600">+ {formatMoney(summary.cobrado_efectivo)}</span>
                   </div>
                   
                   <div className="border-t border-indigo-200 my-2 pt-2"></div>
                   
                   <div className="flex justify-between items-center">
                     <span className="text-indigo-700 font-medium">Total Digital:</span>
-                    <span className="font-medium text-indigo-900">${summary.cobrado_digital.toFixed(2)}</span>
+                    <span className="font-medium text-indigo-900">{formatMoney(summary.cobrado_digital)}</span>
                   </div>
                   <div className="flex justify-between items-center pl-4 text-xs">
                     <span className="text-indigo-600">Mercado Pago:</span>
-                    <span className="text-indigo-800">${summary.cobrado_mercadopago.toFixed(2)}</span>
+                    <span className="text-indigo-800">{formatMoney(summary.cobrado_mercadopago)}</span>
                   </div>
                   <div className="flex justify-between items-center pl-4 text-xs">
                     <span className="text-indigo-600">Transferencia:</span>
-                    <span className="text-indigo-800">${summary.cobrado_transferencia.toFixed(2)}</span>
+                    <span className="text-indigo-800">{formatMoney(summary.cobrado_transferencia)}</span>
                   </div>
                   <div className="flex justify-between items-center pl-4 text-xs">
                     <span className="text-indigo-600">Tarjeta:</span>
-                    <span className="text-indigo-800">${summary.cobrado_tarjeta.toFixed(2)}</span>
+                    <span className="text-indigo-800">{formatMoney(summary.cobrado_tarjeta)}</span>
                   </div>
 
                   <div className="border-t border-indigo-200 my-2 pt-2"></div>
                   
                   <div className="flex justify-between items-center font-bold">
                     <span className="text-indigo-900">Total General Cobrado:</span>
-                    <span className="text-indigo-900">${(summary.cobrado_efectivo + summary.cobrado_digital).toFixed(2)}</span>
+                    <span className="text-indigo-900">{formatMoney(summary.cobrado_efectivo + summary.cobrado_digital)}</span>
                   </div>
                 </div>
               </div>
@@ -223,7 +224,7 @@ export const CashModal: React.FC<CashModalProps> = ({ isOpen, onClose, type, man
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between items-center">
                     <span className="text-amber-800 font-medium">Efectivo Esperado:</span>
-                    <span className="font-bold text-amber-900 text-lg">${summary.efectivo_esperado.toFixed(2)}</span>
+                    <span className="font-bold text-amber-900 text-lg">{formatMoney(summary.efectivo_esperado)}</span>
                   </div>
                   
                   <div className="pt-2">
@@ -237,9 +238,9 @@ export const CashModal: React.FC<CashModalProps> = ({ isOpen, onClose, type, man
                       <Input
                         type="number"
                         min="0"
-                        step="0.01"
+                        step="1"
                         value={amount === 0 && summary.efectivo_esperado === 0 ? '' : amount}
-                        onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                        onChange={(e) => setAmount(Math.round(parseFloat(e.target.value)) || 0)}
                         className="pl-9 font-bold text-lg border-amber-300 focus:border-amber-500 focus:ring-amber-500"
                         autoFocus
                       />
@@ -253,7 +254,7 @@ export const CashModal: React.FC<CashModalProps> = ({ isOpen, onClose, type, man
                     }`}>
                       <span className="font-medium">Diferencia:</span>
                       <span className="font-bold">
-                        {amount > summary.efectivo_esperado ? '+' : ''}{(amount - summary.efectivo_esperado).toFixed(2)}
+                        {amount > summary.efectivo_esperado ? '+' : ''}{amount - summary.efectivo_esperado}
                       </span>
                     </div>
                   )}
@@ -274,9 +275,9 @@ export const CashModal: React.FC<CashModalProps> = ({ isOpen, onClose, type, man
                 <Input
                   type="number"
                   min="0"
-                  step="0.01"
+                  step="1"
                   value={amount || ''}
-                  onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setAmount(Math.round(parseFloat(e.target.value)) || 0)}
                   className="pl-10 text-lg font-medium"
                   autoFocus
                 />
@@ -299,3 +300,4 @@ export const CashModal: React.FC<CashModalProps> = ({ isOpen, onClose, type, man
     </div>
   );
 };
+

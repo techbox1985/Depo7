@@ -3,6 +3,7 @@ import { useCashStore } from '../../store/useCashStore';
 import { Button } from '../ui/Button';
 import { CashModal } from './CashModal';
 import { Wallet, Lock, Unlock } from 'lucide-react';
+import { formatMoney } from '../../utils/money';
 
 export const CashRegister: React.FC = () => {
   const { currentSession } = useCashStore();
@@ -20,7 +21,7 @@ export const CashRegister: React.FC = () => {
       
       {currentSession ? (
         <div className="text-sm text-gray-600 mb-8 space-y-2">
-          <p>Monto inicial: <span className="font-bold">${Number(currentSession.open_amount).toFixed(2)}</span></p>
+          <p>Monto inicial: <span className="font-bold">{formatMoney(Number(currentSession.open_amount))}</span></p>
           <p>Abierta el: {new Date(currentSession.date_open).toLocaleString()}</p>
         </div>
       ) : (
