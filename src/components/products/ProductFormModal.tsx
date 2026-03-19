@@ -303,262 +303,270 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
     const imageUrl = String(formData.image_url || '').trim();
 
     return (
-      <Modal isOpen={isOpen} onClose={onClose} title={product ? 'Editar Producto' : 'Agregar Producto'}>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Input
-              label="Nombre *"
-              required
-              value={formData.name || ''}
-              onChange={(e) => {
-                setFormData({ ...formData, name: e.target.value });
-                if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
-              }}
-            />
-            {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="relative z-50">
-              <label className="mb-1 block text-sm font-medium text-gray-700">Rubro</label>
-              <input
-                type="text"
-                value={formData.rubro || ''}
-                onChange={(e) => {
-                  setFormData({ ...formData, rubro: e.target.value });
-                  setShowRubroSuggestions(true);
-                }}
-                onFocus={() => setShowRubroSuggestions(true)}
-                onBlur={() => setShowRubroSuggestions(false)}
-                placeholder="Escribí o elegí un rubro"
-                className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              {showRubroSuggestions && filteredRubros.length > 0 && (
-                <div 
-                  className="absolute z-20 mt-1 max-h-44 w-full overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg"
-                  onMouseDown={(e) => e.preventDefault()}
-                >
-                  {filteredRubros.map((rubro) => (
-                    <button
-                      key={rubro}
-                      type="button"
-                      onClick={() => {
-                        setFormData((prev) => ({ ...prev, rubro }));
-                        setShowRubroSuggestions(false);
-                      }}
-                      className="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-indigo-50"
-                    >
-                      {rubro}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="relative z-40">
-              <label className="mb-1 block text-sm font-medium text-gray-700">Marca</label>
-              <input
-                type="text"
-                value={formData.marca || ''}
-                onChange={(e) => {
-                  setFormData({ ...formData, marca: e.target.value });
-                  setShowMarcaSuggestions(true);
-                }}
-                onFocus={() => setShowMarcaSuggestions(true)}
-                onBlur={() => setShowMarcaSuggestions(false)}
-                placeholder="Escribí o elegí una marca"
-                className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              {showMarcaSuggestions && filteredMarcas.length > 0 && (
-                <div 
-                  className="absolute z-20 mt-1 max-h-44 w-full overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg"
-                  onMouseDown={(e) => e.preventDefault()}
-                >
-                  {filteredMarcas.map((marca) => (
-                    <button
-                      key={marca}
-                      type="button"
-                      onClick={() => {
-                        setFormData((prev) => ({ ...prev, marca }));
-                        setShowMarcaSuggestions(false);
-                      }}
-                      className="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-indigo-50"
-                    >
-                      {marca}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Input
-                label="Stock *"
-                type="number"
-                required
-                min="0"
-                value={formData.stock ?? 0}
-                onChange={(e) => {
-                  setFormData({ ...formData, stock: getSafeNumber(e.target.value, 0) });
-                  if (errors.stock) setErrors((prev) => ({ ...prev, stock: undefined }));
-                }}
-              />
-              {errors.stock && <p className="mt-1 text-xs text-red-600">{errors.stock}</p>}
-            </div>
-
-            <div>
-              <Input
-                label="Costo ($) *"
-                type="number"
-                required
-                min="0"
-                step="1"
-                value={formData.costo ?? 0}
-                onChange={(e) => {
-                  setFormData({ ...formData, costo: getSafeNumber(e.target.value, 0) });
-                  if (errors.costo) setErrors((prev) => ({ ...prev, costo: undefined }));
-                }}
-              />
-              {errors.costo && <p className="mt-1 text-xs text-red-600">{errors.costo}</p>}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Código de barras"
-              value={formData.barcode || ''}
-              onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-            />
-
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Estado *</label>
-              <select
-                className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                value={formData.estado || 'activo'}
-                onChange={(e) => {
-                  setFormData({ ...formData, estado: e.target.value });
-                  if (errors.estado) setErrors((prev) => ({ ...prev, estado: undefined }));
-                }}
-              >
-                <option value="activo">Activo</option>
-                <option value="inactivo">Inactivo</option>
-              </select>
-              {errors.estado && <p className="mt-1 text-xs text-red-600">{errors.estado}</p>}
-            </div>
-          </div>
-
-          <div className="mt-4 border-t border-gray-200 pt-4">
-            <h3 className="mb-1 text-sm font-medium text-gray-900">Precios por Lista</h3>
-            <p className="mb-3 text-xs text-gray-500">
-              Completá el precio final de cada lista. Si activás “Precio fijo”, ese precio queda protegido del recálculo.
-            </p>
-
-            {errors.priceLists && <p className="mb-3 text-xs text-red-600">{errors.priceLists}</p>}
-
-            <div className="space-y-4">
-              {priceLists.map((list) => {
-                const priceData = productPrices[list.id] || {
-                  price_list_id: list.id,
-                  final_price: 0,
-                  is_fixed: false,
-                  exclude_from_mass_update: false,
-                };
-
-                const margin = getSafeNumber(list.margin_percent, 0);
-                const calculatedPrice = getSuggestedPrice(margin);
-
-                return (
-                  <div key={list.id} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-900">
-                        {list.name} (Margen: {margin}%)
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        Precio sugerido: {formatMoney(calculatedPrice)}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-3">
-                      <Input
-                        label="Precio Final ($) *"
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={priceData.final_price ?? 0}
-                        onChange={(e) =>
-                          handlePriceChange(list, 'final_price', getSafeNumber(e.target.value, 0))
-                        }
-                      />
-
-                      <div className="flex h-10 items-center">
-                        <input
-                          type="checkbox"
-                          id={`fixed-${list.id}`}
-                          checked={Boolean(priceData.is_fixed)}
-                          disabled={Boolean(priceData.exclude_from_mass_update)}
-                          onChange={(e) => handlePriceChange(list, 'is_fixed', e.target.checked)}
-                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-                        />
-                        <label htmlFor={`fixed-${list.id}`} className="ml-2 block text-sm text-gray-900">
-                          Precio Fijo
-                        </label>
-                      </div>
-
-                      <div className="flex h-10 items-center">
-                        <input
-                          type="checkbox"
-                          id={`exclude-${list.id}`}
-                          checked={Boolean(priceData.exclude_from_mass_update)}
-                          disabled={Boolean(priceData.is_fixed)}
-                          onChange={(e) =>
-                            handlePriceChange(list, 'exclude_from_mass_update', e.target.checked)
-                          }
-                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-                        />
-                        <label htmlFor={`exclude-${list.id}`} className="ml-2 block text-sm text-gray-900">
-                          Excluir de recálculo
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <Input
-            label="URL de Imagen"
-            value={formData.image_url || ''}
-            onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-          />
-
-          {imageUrl && (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-              <p className="mb-2 text-sm font-medium text-gray-700">Vista previa</p>
-              <div className="flex justify-center overflow-hidden rounded-md border border-gray-200 bg-white p-3">
-                <img
-                  src={imageUrl}
-                  alt="Vista previa del producto"
-                  className="max-h-40 w-auto object-contain"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.display = 'none';
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title={product ? 'Editar Producto' : 'Agregar Producto'}
+      >
+        <div className="max-h-[85vh]">
+          <form onSubmit={handleSubmit} className="flex max-h-[85vh] flex-col">
+            <div className="flex-1 space-y-4 overflow-y-auto pr-1">
+              <div>
+                <Input
+                  label="Nombre *"
+                  required
+                  value={formData.name || ''}
+                  onChange={(e) => {
+                    setFormData({ ...formData, name: e.target.value });
+                    if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
                   }}
                 />
+                {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
               </div>
-            </div>
-          )}
 
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button type="button" variant="secondary" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button type="submit" isLoading={isLoading}>
-              {product ? 'Guardar Cambios' : 'Agregar Producto'}
-            </Button>
-          </div>
-        </form>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="relative z-50">
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Rubro</label>
+                  <input
+                    type="text"
+                    value={formData.rubro || ''}
+                    onChange={(e) => {
+                      setFormData({ ...formData, rubro: e.target.value });
+                      setShowRubroSuggestions(true);
+                    }}
+                    onFocus={() => setShowRubroSuggestions(true)}
+                    onBlur={() => setShowRubroSuggestions(false)}
+                    placeholder="Escribí o elegí un rubro"
+                    className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  {showRubroSuggestions && filteredRubros.length > 0 && (
+                    <div
+                      className="absolute z-20 mt-1 max-h-44 w-full overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg"
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      {filteredRubros.map((rubro) => (
+                        <button
+                          key={rubro}
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({ ...prev, rubro }));
+                            setShowRubroSuggestions(false);
+                          }}
+                          className="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-indigo-50"
+                        >
+                          {rubro}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="relative z-40">
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Marca</label>
+                  <input
+                    type="text"
+                    value={formData.marca || ''}
+                    onChange={(e) => {
+                      setFormData({ ...formData, marca: e.target.value });
+                      setShowMarcaSuggestions(true);
+                    }}
+                    onFocus={() => setShowMarcaSuggestions(true)}
+                    onBlur={() => setShowMarcaSuggestions(false)}
+                    placeholder="Escribí o elegí una marca"
+                    className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  {showMarcaSuggestions && filteredMarcas.length > 0 && (
+                    <div
+                      className="absolute z-20 mt-1 max-h-44 w-full overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg"
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      {filteredMarcas.map((marca) => (
+                        <button
+                          key={marca}
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({ ...prev, marca }));
+                            setShowMarcaSuggestions(false);
+                          }}
+                          className="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-indigo-50"
+                        >
+                          {marca}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Input
+                    label="Stock *"
+                    type="number"
+                    required
+                    min="0"
+                    value={formData.stock ?? 0}
+                    onChange={(e) => {
+                      setFormData({ ...formData, stock: getSafeNumber(e.target.value, 0) });
+                      if (errors.stock) setErrors((prev) => ({ ...prev, stock: undefined }));
+                    }}
+                  />
+                  {errors.stock && <p className="mt-1 text-xs text-red-600">{errors.stock}</p>}
+                </div>
+
+                <div>
+                  <Input
+                    label="Costo ($) *"
+                    type="number"
+                    required
+                    min="0"
+                    step="1"
+                    value={formData.costo ?? 0}
+                    onChange={(e) => {
+                      setFormData({ ...formData, costo: getSafeNumber(e.target.value, 0) });
+                      if (errors.costo) setErrors((prev) => ({ ...prev, costo: undefined }));
+                    }}
+                  />
+                  {errors.costo && <p className="mt-1 text-xs text-red-600">{errors.costo}</p>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Código de barras"
+                  value={formData.barcode || ''}
+                  onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                />
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Estado *</label>
+                  <select
+                    className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={formData.estado || 'activo'}
+                    onChange={(e) => {
+                      setFormData({ ...formData, estado: e.target.value });
+                      if (errors.estado) setErrors((prev) => ({ ...prev, estado: undefined }));
+                    }}
+                  >
+                    <option value="activo">Activo</option>
+                    <option value="inactivo">Inactivo</option>
+                  </select>
+                  {errors.estado && <p className="mt-1 text-xs text-red-600">{errors.estado}</p>}
+                </div>
+              </div>
+
+              <div className="mt-4 border-t border-gray-200 pt-4">
+                <h3 className="mb-1 text-sm font-medium text-gray-900">Precios por Lista</h3>
+                <p className="mb-3 text-xs text-gray-500">
+                  Completá el precio final de cada lista. Si activás “Precio fijo”, ese precio queda protegido del recálculo.
+                </p>
+
+                {errors.priceLists && <p className="mb-3 text-xs text-red-600">{errors.priceLists}</p>}
+
+                <div className="space-y-4">
+                  {priceLists.map((list) => {
+                    const priceData = productPrices[list.id] || {
+                      price_list_id: list.id,
+                      final_price: 0,
+                      is_fixed: false,
+                      exclude_from_mass_update: false,
+                    };
+
+                    const margin = getSafeNumber(list.margin_percent, 0);
+                    const calculatedPrice = getSuggestedPrice(margin);
+
+                    return (
+                      <div key={list.id} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="text-sm font-medium text-gray-900">
+                            {list.name} (Margen: {margin}%)
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            Precio sugerido: {formatMoney(calculatedPrice)}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-3">
+                          <Input
+                            label="Precio Final ($) *"
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={priceData.final_price ?? 0}
+                            onChange={(e) =>
+                              handlePriceChange(list, 'final_price', getSafeNumber(e.target.value, 0))
+                            }
+                          />
+
+                          <div className="flex h-10 items-center">
+                            <input
+                              type="checkbox"
+                              id={`fixed-${list.id}`}
+                              checked={Boolean(priceData.is_fixed)}
+                              disabled={Boolean(priceData.exclude_from_mass_update)}
+                              onChange={(e) => handlePriceChange(list, 'is_fixed', e.target.checked)}
+                              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                            <label htmlFor={`fixed-${list.id}`} className="ml-2 block text-sm text-gray-900">
+                              Precio Fijo
+                            </label>
+                          </div>
+
+                          <div className="flex h-10 items-center">
+                            <input
+                              type="checkbox"
+                              id={`exclude-${list.id}`}
+                              checked={Boolean(priceData.exclude_from_mass_update)}
+                              disabled={Boolean(priceData.is_fixed)}
+                              onChange={(e) =>
+                                handlePriceChange(list, 'exclude_from_mass_update', e.target.checked)
+                              }
+                              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                            <label htmlFor={`exclude-${list.id}`} className="ml-2 block text-sm text-gray-900">
+                              Excluir de recálculo
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <Input
+                label="URL de Imagen"
+                value={formData.image_url || ''}
+                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+              />
+
+              {imageUrl && (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <p className="mb-2 text-sm font-medium text-gray-700">Vista previa</p>
+                  <div className="flex justify-center overflow-hidden rounded-md border border-gray-200 bg-white p-3">
+                    <img
+                      src={imageUrl}
+                      alt="Vista previa del producto"
+                      className="max-h-40 w-auto object-contain"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 flex justify-end space-x-3 border-t border-gray-200 bg-white pt-4">
+              <Button type="button" variant="secondary" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button type="submit" isLoading={isLoading}>
+                {product ? 'Guardar Cambios' : 'Agregar Producto'}
+              </Button>
+            </div>
+          </form>
+        </div>
       </Modal>
     );
   }
