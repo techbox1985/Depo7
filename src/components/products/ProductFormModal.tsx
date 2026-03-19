@@ -91,16 +91,30 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
           setPriceLists(lists);
 
           const initialPrices: Record<string, ProductPriceFormState> = {};
+
           lists.forEach((list) => {
-            const existingPrice = product?.product_prices?.find((p) => p.price_list_id === list.id);
+            const existingPrice = product?.product_prices?.find(
+              (p) => p.price_list_id === list.id
+            );
+
+            const {
+              id,
+              product_id,
+              final_price,
+              is_fixed,
+              exclude_from_mass_update,
+            } = existingPrice || {};
+
             initialPrices[list.id] = {
-              ...(existingPrice || {}),
+              id,
+              product_id,
               price_list_id: list.id,
-              final_price: getSafeNumber(existingPrice?.final_price, 0),
-              is_fixed: Boolean(existingPrice?.is_fixed),
-              exclude_from_mass_update: Boolean(existingPrice?.exclude_from_mass_update),
+              final_price: getSafeNumber(final_price, 0),
+              is_fixed: Boolean(is_fixed),
+              exclude_from_mass_update: Boolean(exclude_from_mass_update),
             };
           });
+
           setProductPrices(initialPrices);
         } catch (error) {
           console.error('Error fetching price lists:', error);
@@ -134,22 +148,18 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
 
     const filteredRubros = useMemo(() => {
       const query = normalizeText(String(formData.rubro || ''));
-      const source = rubroOptions;
+      if (!query) return rubroOptions.slice(0, 8);
 
-      if (!query) return source.slice(0, 8);
-
-      return source
+      return rubroOptions
         .filter((item) => normalizeText(item).includes(query))
         .slice(0, 8);
     }, [rubroOptions, formData.rubro]);
 
     const filteredMarcas = useMemo(() => {
       const query = normalizeText(String(formData.marca || ''));
-      const source = marcaOptions;
+      if (!query) return marcaOptions.slice(0, 8);
 
-      if (!query) return source.slice(0, 8);
-
-      return source
+      return marcaOptions
         .filter((item) => normalizeText(item).includes(query))
         .slice(0, 8);
     }, [marcaOptions, formData.marca]);
@@ -179,11 +189,10 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
 
         if (field === 'is_fixed') {
           const checked = Boolean(value);
-
           next.is_fixed = checked;
+
           if (checked) {
             next.exclude_from_mass_update = false;
-
             const currentPrice = getSafeNumber(current.final_price, 0);
             if (currentPrice <= 0) {
               next.final_price = getSuggestedPrice(getSafeNumber(list.margin_percent, 0));
@@ -193,8 +202,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
 
         if (field === 'exclude_from_mass_update') {
           const checked = Boolean(value);
-
           next.exclude_from_mass_update = checked;
+
           if (checked) {
             next.is_fixed = false;
           }
@@ -276,7 +285,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
             const excludeFromMassUpdate = Boolean(priceData?.exclude_from_mass_update);
 
             await priceListsService.upsertProductPrice({
-              ...priceData,
+              id: priceData?.id,
               product_id: savedProductId,
               price_list_id: list.id,
               cost_price: getSafeNumber(formData.costo, 0),
@@ -458,10 +467,13 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
               <div className="mt-4 border-t border-gray-200 pt-4">
                 <h3 className="mb-1 text-sm font-medium text-gray-900">Precios por Lista</h3>
                 <p className="mb-3 text-xs text-gray-500">
-                  Completá el precio final de cada lista. Si activás “Precio fijo”, ese precio queda protegido del recálculo.
+                  Completá el precio final de cada lista. Si activás “Precio fijo”, ese precio
+                  queda protegido del recálculo.
                 </p>
 
-                {errors.priceLists && <p className="mb-3 text-xs text-red-600">{errors.priceLists}</p>}
+                {errors.priceLists && (
+                  <p className="mb-3 text-xs text-red-600">{errors.priceLists}</p>
+                )}
 
                 <div className="space-y-4">
                   {priceLists.map((list) => {
@@ -476,7 +488,10 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
                     const calculatedPrice = getSuggestedPrice(margin);
 
                     return (
-                      <div key={list.id} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                      <div
+                        key={list.id}
+                        className="rounded-lg border border-gray-200 bg-gray-50 p-3"
+                      >
                         <div className="mb-2 flex items-center justify-between">
                           <span className="text-sm font-medium text-gray-900">
                             {list.name} (Margen: {margin}%)
@@ -507,7 +522,10 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
                               onChange={(e) => handlePriceChange(list, 'is_fixed', e.target.checked)}
                               className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
                             />
-                            <label htmlFor={`fixed-${list.id}`} className="ml-2 block text-sm text-gray-900">
+                            <label
+                              htmlFor={`fixed-${list.id}`}
+                              className="ml-2 block text-sm text-gray-900"
+                            >
                               Precio Fijo
                             </label>
                           </div>
@@ -519,11 +537,18 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
                               checked={Boolean(priceData.exclude_from_mass_update)}
                               disabled={Boolean(priceData.is_fixed)}
                               onChange={(e) =>
-                                handlePriceChange(list, 'exclude_from_mass_update', e.target.checked)
+                                handlePriceChange(
+                                  list,
+                                  'exclude_from_mass_update',
+                                  e.target.checked
+                                )
                               }
                               className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
                             />
-                            <label htmlFor={`exclude-${list.id}`} className="ml-2 block text-sm text-gray-900">
+                            <label
+                              htmlFor={`exclude-${list.id}`}
+                              className="ml-2 block text-sm text-gray-900"
+                            >
                               Excluir de recálculo
                             </label>
                           </div>
@@ -571,3 +596,5 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
     );
   }
 );
+
+ProductFormModal.displayName = 'ProductFormModal';

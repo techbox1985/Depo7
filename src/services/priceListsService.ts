@@ -82,8 +82,13 @@ export const priceListsService = {
   },
 
   async updateProductPrice(id: string, updates: Partial<ProductPrice>): Promise<ProductPrice> {
-    const { price_list, ...safeUpdates } = updates as Partial<ProductPrice> & {
+    const {
+      price_list,
+      price_lists,
+      ...safeUpdates
+    } = updates as Partial<ProductPrice> & {
       price_list?: unknown;
+      price_lists?: unknown;
     };
 
     const { data, error } = await supabase
@@ -101,8 +106,13 @@ export const priceListsService = {
   },
 
   async upsertProductPrice(productPrice: Partial<ProductPrice>): Promise<ProductPrice> {
-    const { price_list, ...safeProductPrice } = productPrice as Partial<ProductPrice> & {
+    const {
+      price_list,
+      price_lists,
+      ...safeProductPrice
+    } = productPrice as Partial<ProductPrice> & {
       price_list?: unknown;
+      price_lists?: unknown;
     };
 
     const { data, error } = await supabase
