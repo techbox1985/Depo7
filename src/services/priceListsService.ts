@@ -82,10 +82,14 @@ export const priceListsService = {
   },
 
   async updateProductPrice(id: string, updates: Partial<ProductPrice>): Promise<ProductPrice> {
+    const { price_list, ...safeUpdates } = updates as Partial<ProductPrice> & {
+      price_list?: unknown;
+    };
+
     const { data, error } = await supabase
       .from('product_prices')
       .update({
-        ...updates,
+        ...safeUpdates,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
@@ -97,11 +101,15 @@ export const priceListsService = {
   },
 
   async upsertProductPrice(productPrice: Partial<ProductPrice>): Promise<ProductPrice> {
+    const { price_list, ...safeProductPrice } = productPrice as Partial<ProductPrice> & {
+      price_list?: unknown;
+    };
+
     const { data, error } = await supabase
       .from('product_prices')
       .upsert(
         {
-          ...productPrice,
+          ...safeProductPrice,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'product_id,price_list_id' }
