@@ -1,259 +1,164 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../../services/supabaseClient';
-import { Sale } from '../../types';
-import { Spinner } from '../ui/Spinner';
-import { Button } from '../ui/Button';
-import { Search, FileText, Clock, Eye, CheckCircle } from 'lucide-react';
-import { OrderDetailsModal } from './OrderDetailsModal';
 import { formatMoney } from '../../utils/money';
+import { Spinner } from '../ui/Spinner';
+import { OrderDetailsModal } from './OrderDetailsModal';
+import { Search, Filter, Calendar } from 'lucide-react';
+
+type Sale = {
+  id: string;
+  total: number;
+  estado: 'completada' | 'pendiente' | 'presupuesto' | 'cancelada';
+  created_at: string;
+  codigo_venta?: string; // Asumido por contexto de POS
+  customers?: {
+    name: string;
+  };
+};
 
 export const OrdersView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'pendiente' | 'presupuesto'>('pendiente');
-  const [orders, setOrders] = useState<Sale[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedOrder, setSelectedOrder] = useState<Sale | null>(null);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-
-  const fetchOrders = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('sales')
-        .select('*, customers(name)')
-        .in('estado', ['pendiente', 'presupuesto'])
-        .order('fecha', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching orders:', error);
-      } else {
-        setOrders(data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Sale | null>(null);
+  
+  // Filtros
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState<string>('todos');
 
   useEffect(() => {
-    fetchOrders();
+    fetchSales();
   }, []);
 
-  const filteredOrders = useMemo(() => {
-    return orders.filter((order: any) => {
-      const matchesTab = order.estado === activeTab;
-      const matchesSearch = 
-        order.codigo_venta.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (order.customers?.name && order.customers.name.toLowerCase().includes(searchTerm.toLowerCase()));
-      return matchesTab && matchesSearch;
-    });
-  }, [orders, activeTab, searchTerm]);
+  const fetchSales = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('sales')
+      .select(`
+        *,
+        customers ( name )
+      `)
+      .order('created_at', { ascending: false });
 
-  const handleViewDetails = (order: Sale) => {
-    setSelectedOrder(order);
-    setIsDetailsModalOpen(true);
+    if (error) console.error('Error fetching sales:', error);
+    else setSales(data || []);
+    setLoading(false);
   };
 
-  const handleConvertToSale = async (order: Sale) => {
-    try {
-      // To convert to sale, we need to call create_sale_with_status with status='completed'
-      // But we need the items. We should fetch them first or pass them to checkout.
-      // Actually, since the order is already in the database, we could just update its status and deduct stock.
-      // But the user requested: "Convertir a venta" (solo para presupuestos o pedidos) -> llama a checkout con status='completed'.
-      // Wait, checkout uses cartStore.items. If we just call checkout, it will use the current cart.
-      // That's not right. We need to load the order items into the cart, or call the RPC directly.
-      // Let's call the RPC directly here to avoid messing with the cart.
-      
-      const { data: items, error: itemsError } = await supabase
-        .from('sale_items')
-        .select('*')
-        .eq('sale_id', order.id);
+  // 📊 FILTRADO Y MÉTRICAS
+  const filteredSales = useMemo(() => {
+    return sales.filter(s => {
+      const matchEstado = filtroEstado === 'todos' || s.estado === filtroEstado;
+      const matchBusqueda = 
+        s.customers?.name?.toLowerCase().includes(busqueda.toLowerCase()) ||
+        s.codigo_venta?.toLowerCase().includes(busqueda.toLowerCase());
+      return matchEstado && matchBusqueda;
+    });
+  }, [sales, filtroEstado, busqueda]);
 
-      if (itemsError) throw itemsError;
+  const stats = useMemo(() => {
+    return {
+      totalVendido: sales.filter(s => s.estado === 'completada').reduce((acc, s) => acc + Number(s.total), 0),
+      ventas: sales.filter(s => s.estado === 'completada').length,
+      pedidos: sales.filter(s => s.estado === 'pendiente').length,
+      canceladas: sales.filter(s => s.estado === 'cancelada').length,
+      presupuestos: sales.filter(s => s.estado === 'presupuesto').length,
+    };
+  }, [sales]);
 
-      const payload = {
-        p_total: order.total,
-        p_cliente_id: order.cliente_id,
-        p_estado: 'completada',
-        p_items: items.map((item: any) => ({
-          product_id: item.product_id,
-          product_name: item.product_name,
-          quantity: item.quantity,
-          price: item.price,
-          original_price: item.original_price
-        })),
-        p_metodo_pago: order.metodo_pago,
-        p_tipo_digital: order.tipo_digital,
-        p_cuotas: order.cuotas,
-        p_monto_efectivo: order.monto_efectivo,
-        p_monto_digital: order.monto_digital,
-        p_tipo_descuento: order.tipo_descuento,
-        p_valor_descuento: order.valor_descuento,
-        p_caja_id: order.caja_id
-      };
-
-      const { error: rpcError } = await supabase.rpc('create_sale_with_status', payload);
-
-      if (rpcError) {
-        if (rpcError.message.includes('stock') || rpcError.message.includes('violates check constraint')) {
-          throw new Error('Stock insuficiente para uno o más productos');
-        }
-        throw rpcError;
-      }
-
-      // Optionally, delete the old pending/quote order or mark it as converted.
-      // For simplicity, we can delete the old one since we created a new completed sale.
-      await supabase.from('sales').delete().eq('id', order.id);
-
-      alert('¡Convertido a venta con éxito!');
-      fetchOrders();
-      setIsDetailsModalOpen(false);
-    } catch (error: any) {
-      console.error('Error converting to sale:', error);
-      alert(error.message || 'Error al convertir a venta');
+  const getEstadoColor = (estado: string) => {
+    switch (estado) {
+      case 'completada': return 'bg-green-100 text-green-700 border-green-200';
+      case 'pendiente': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'cancelada': return 'bg-red-100 text-red-700 border-red-200';
+      case 'presupuesto': return 'bg-blue-100 text-blue-700 border-blue-200';
+      default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
 
+  if (loading) return <div className="flex justify-center py-20"><Spinner size="lg" /></div>;
+
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Pedidos y Presupuestos</h1>
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+      <h1 className="text-2xl font-bold text-gray-900">Historial de Movimientos</h1>
+
+      {/* 📊 TARJETAS KPI */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        {[
+          { label: 'Total Vendido', value: formatMoney(stats.totalVendido) },
+          { label: 'Ventas', value: stats.ventas },
+          { label: 'Pedidos', value: stats.pedidos },
+          { label: 'Canceladas', value: stats.canceladas },
+          { label: 'Presupuestos', value: stats.presupuestos },
+        ].map((stat, i) => (
+          <div key={i} className="p-4 bg-white rounded-xl shadow-sm border border-gray-200">
+            <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">{stat.label}</p>
+            <p className="text-xl font-bold text-gray-900 mt-1">{stat.value}</p>
+          </div>
+        ))}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex" aria-label="Tabs">
-            <button
-              onClick={() => setActiveTab('pendiente')}
-              className={`${
-                activeTab === 'pendiente'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm flex justify-center items-center gap-2`}
-            >
-              <Clock className="h-4 w-4" />
-              Pedidos
-            </button>
-            <button
-              onClick={() => setActiveTab('presupuesto')}
-              className={`${
-                activeTab === 'presupuesto'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm flex justify-center items-center gap-2`}
-            >
-              <FileText className="h-4 w-4" />
-              Presupuestos
-            </button>
-          </nav>
+      {/* 🔍 FILTROS */}
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar por cliente o código..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
         </div>
+        <select
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+          value={filtroEstado}
+          onChange={(e) => setFiltroEstado(e.target.value)}
+        >
+          <option value="todos">Todos los estados</option>
+          <option value="completada">Ventas</option>
+          <option value="pendiente">Pedidos</option>
+          <option value="presupuesto">Presupuestos</option>
+          <option value="cancelada">Canceladas</option>
+        </select>
+      </div>
 
-        <div className="p-4 border-b border-gray-200">
-          <div className="relative w-full max-w-md">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+      {/* 🧾 LISTADO */}
+      <div className="grid gap-3">
+        {filteredSales.map((sale) => (
+          <div
+            key={sale.id}
+            onClick={() => setSelected(sale)}
+            className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md cursor-pointer transition flex items-center justify-between"
+          >
+            <div className="flex items-center gap-4">
+              <div className={`p-2 rounded-lg ${getEstadoColor(sale.estado)}`}>
+                <Calendar className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">{sale.customers?.name || 'Consumidor Final'}</p>
+                <p className="text-xs text-gray-500">{new Date(sale.created_at).toLocaleString()}</p>
+              </div>
             </div>
-            <input
-              type="text"
-              placeholder="Buscar por cliente o ID..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
+            
+            <div className="flex items-center gap-6">
+              <span className={`text-xs px-3 py-1 rounded-full font-medium border ${getEstadoColor(sale.estado)}`}>
+                {sale.estado.toUpperCase()}
+              </span>
+              <p className="font-bold text-lg text-gray-900 w-24 text-right">{formatMoney(Number(sale.total))}</p>
+            </div>
           </div>
-        </div>
-
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Spinner size="lg" />
-          </div>
-        ) : filteredOrders.length === 0 ? (
-          <div className="text-center py-12">
-            {activeTab === 'pendiente' ? (
-              <Clock className="mx-auto h-12 w-12 text-gray-400" />
-            ) : (
-              <FileText className="mx-auto h-12 w-12 text-gray-400" />
-            )}
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No hay {activeTab === 'pendiente' ? 'pedidos' : 'presupuestos'}</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              No se encontraron registros con los filtros actuales.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredOrders.map((order) => (
-                  <OrderRow 
-                    key={order.id} 
-                    order={order} 
-                    onViewDetails={() => handleViewDetails(order)} 
-                    onConvertToSale={() => handleConvertToSale(order)} 
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        ))}
       </div>
 
-      {isDetailsModalOpen && selectedOrder && (
+      {/* MODAL */}
+      {selected && (
         <OrderDetailsModal
-          isOpen={isDetailsModalOpen}
-          onClose={() => setIsDetailsModalOpen(false)}
-          order={selectedOrder}
-          onConvertToSale={() => handleConvertToSale(selectedOrder)}
+          isOpen={!!selected}
+          order={selected}
+          onClose={() => setSelected(null)}
+          onConvertToSale={fetchSales}
         />
       )}
     </div>
   );
 };
-
-const OrderRow = React.memo(({ 
-  order, 
-  onViewDetails, 
-  onConvertToSale 
-}: { 
-  order: any; 
-  onViewDetails: () => void;
-  onConvertToSale: () => void;
-}) => {
-  return (
-    <tr className="hover:bg-gray-50">
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {order.codigo_venta}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-        {new Date(order.fecha).toLocaleDateString()} {new Date(order.fecha).toLocaleTimeString()}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-        {order.customers?.name || 'Consumidor Final'}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-        {formatMoney(Number(order.total))}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" size="sm" onClick={onViewDetails} className="flex items-center gap-1">
-            <Eye className="h-4 w-4" />
-            Detalles
-          </Button>
-          <Button size="sm" onClick={onConvertToSale} className="flex items-center gap-1">
-            <CheckCircle className="h-4 w-4" />
-            Convertir a Venta
-          </Button>
-        </div>
-      </td>
-    </tr>
-  );
-});
