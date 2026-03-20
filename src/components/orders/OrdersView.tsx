@@ -3,7 +3,9 @@ import { supabase } from '../../services/supabaseClient';
 import { formatMoney } from '../../utils/money';
 import { Spinner } from '../ui/Spinner';
 import { OrderDetailsModal } from './OrderDetailsModal';
-import { Search, Calendar } from 'lucide-react';
+import { Search, Ban, Printer, Edit } from 'lucide-react';
+import { Button } from '../ui/Button';
+import { buildPrintHtml, PostActionData } from '../pos/Cart';
 
 type Sale = {
   id: string;
@@ -20,6 +22,7 @@ export const OrdersView: React.FC = () => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Sale | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
@@ -44,6 +47,68 @@ export const OrdersView: React.FC = () => {
   };
 
   const isCancelled = (estado: string) => ['anulada', 'cancelada', 'cancelled'].includes(estado.toLowerCase());
+
+  const handleCancel = async (e: React.MouseEvent, sale: Sale) => {
+    e.stopPropagation();
+    if (isCancelled(sale.estado)) return;
+    if (!window.confirm(`¿Estás seguro de que deseas anular el movimiento ${sale.codigo_venta || sale.id}?`)) return;
+    
+    setActionLoading(sale.id);
+    try {
+      const { error } = await supabase.rpc('anular_venta', { p_sale_id: sale.id });
+      if (error) throw error;
+      await fetchSales();
+    } catch (e) {
+      console.error('Error al cancelar:', e);
+      alert('Error al cancelar el movimiento.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleReprint = async (e: React.MouseEvent, sale: Sale) => {
+    e.stopPropagation();
+    
+    // Fetch items to build print data
+    const { data: items, error } = await supabase
+      .from('sale_items')
+      .select('*')
+      .eq('sale_id', sale.id);
+
+    if (error) {
+      alert('Error al obtener datos para impresión.');
+      return;
+    }
+
+    const printData: PostActionData = {
+      status: sale.estado === 'completada' ? 'completada' : sale.estado === 'presupuesto' ? 'presupuesto' : 'pendiente',
+      items: (items || []).map(item => ({
+        productId: item.product_id,
+        productName: item.product_name,
+        quantity: item.quantity,
+        unitPrice: item.price,
+        subtotal: item.price * item.quantity,
+      })),
+      subtotal: (items || []).reduce((acc, item) => acc + item.price * item.quantity, 0),
+      total: sale.total,
+      createdAt: sale.creado_en,
+    };
+
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+    if (!printWindow) {
+      alert('No se pudo abrir la ventana de impresión.');
+      return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(buildPrintHtml(printData));
+    printWindow.document.close();
+  };
+
+  const handleEdit = (e: React.MouseEvent, sale: Sale) => {
+    e.stopPropagation();
+    alert(`La edición del movimiento ${sale.codigo_venta || sale.id} no está implementada.`);
+  };
 
   const filteredSales = useMemo(() => {
     return sales.filter(s => {
@@ -121,31 +186,58 @@ export const OrdersView: React.FC = () => {
         </select>
       </div>
 
-      <div className="grid gap-3">
-        {filteredSales.map((sale) => (
-          <div
-            key={sale.id}
-            onClick={() => setSelected(sale)}
-            className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md cursor-pointer transition flex items-center justify-between"
-          >
-            <div className="flex items-center gap-4">
-              <div className={`p-2 rounded-lg ${getEstadoColor(sale.estado)}`}>
-                <Calendar className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900">{sale.customers?.name || 'Consumidor Final'}</p>
-                <p className="text-xs text-gray-500">{new Date(sale.creado_en).toLocaleString()}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-6">
-              <span className={`text-xs px-3 py-1 rounded-full font-medium border ${getEstadoColor(sale.estado)}`}>
-                {sale.estado.toUpperCase()}
-              </span>
-              <p className="font-bold text-lg text-gray-900 w-24 text-right">{formatMoney(Number(sale.total))}</p>
-            </div>
-          </div>
-        ))}
+      <div className="bg-white shadow-sm border border-gray-200 rounded-xl overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredSales.map((sale) => (
+              <tr key={sale.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelected(sale)}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{sale.codigo_venta || '-'}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(sale.creado_en).toLocaleString()}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{sale.customers?.name || 'Consumidor Final'}</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium border ${getEstadoColor(sale.estado)}`}>
+                    {sale.estado.toUpperCase()}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-bold">{formatMoney(Number(sale.total))}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                  <div className="flex justify-center gap-2">
+                    <Button variant="ghost" size="sm" onClick={(e) => handleReprint(e, sale)} className="text-gray-600 hover:text-gray-800" title="Reimprimir">
+                      <Printer className="h-4 w-4" />
+                    </Button>
+                    {!isCancelled(sale.estado) && (
+                      <Button variant="ghost" size="sm" onClick={(e) => handleEdit(e, sale)} className="text-blue-600 hover:text-blue-800" title="Editar">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {!isCancelled(sale.estado) && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={(e) => handleCancel(e, sale)}
+                        disabled={actionLoading === sale.id}
+                        className="text-red-600 hover:text-red-800"
+                        title="Anular"
+                      >
+                        <Ban className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {selected && (
@@ -153,7 +245,7 @@ export const OrdersView: React.FC = () => {
           isOpen={!!selected}
           order={selected}
           onClose={() => setSelected(null)}
-          onConvertToSale={fetchSales}
+          onActionComplete={fetchSales}
         />
       )}
     </div>
