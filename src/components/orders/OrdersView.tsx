@@ -3,14 +3,14 @@ import { supabase } from '../../services/supabaseClient';
 import { formatMoney } from '../../utils/money';
 import { Spinner } from '../ui/Spinner';
 import { OrderDetailsModal } from './OrderDetailsModal';
-import { Search, Filter, Calendar } from 'lucide-react';
+import { Search, Calendar } from 'lucide-react';
 
 type Sale = {
   id: string;
   total: number;
-  estado: 'completada' | 'pendiente' | 'presupuesto' | 'cancelada';
-  created_at: string;
-  codigo_venta?: string; // Asumido por contexto de POS
+  estado: 'completada' | 'pendiente' | 'presupuesto' | 'anulada' | 'cancelada' | 'cancelled';
+  creado_en: string;
+  codigo_venta?: string;
   customers?: {
     name: string;
   };
@@ -21,7 +21,6 @@ export const OrdersView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Sale | null>(null);
   
-  // Filtros
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
 
@@ -37,17 +36,19 @@ export const OrdersView: React.FC = () => {
         *,
         customers ( name )
       `)
-      .order('created_at', { ascending: false });
+      .order('creado_en', { ascending: false });
 
     if (error) console.error('Error fetching sales:', error);
-    else setSales(data || []);
+    else setSales((data as Sale[]) || []);
     setLoading(false);
   };
 
-  // 📊 FILTRADO Y MÉTRICAS
+  const isCancelled = (estado: string) => ['anulada', 'cancelada', 'cancelled'].includes(estado.toLowerCase());
+
   const filteredSales = useMemo(() => {
     return sales.filter(s => {
-      const matchEstado = filtroEstado === 'todos' || s.estado === filtroEstado;
+      const matchEstado = filtroEstado === 'todos' || 
+                          (filtroEstado === 'cancelada' ? isCancelled(s.estado) : s.estado === filtroEstado);
       const matchBusqueda = 
         s.customers?.name?.toLowerCase().includes(busqueda.toLowerCase()) ||
         s.codigo_venta?.toLowerCase().includes(busqueda.toLowerCase());
@@ -60,16 +61,16 @@ export const OrdersView: React.FC = () => {
       totalVendido: sales.filter(s => s.estado === 'completada').reduce((acc, s) => acc + Number(s.total), 0),
       ventas: sales.filter(s => s.estado === 'completada').length,
       pedidos: sales.filter(s => s.estado === 'pendiente').length,
-      canceladas: sales.filter(s => s.estado === 'cancelada').length,
+      canceladas: sales.filter(s => isCancelled(s.estado)).length,
       presupuestos: sales.filter(s => s.estado === 'presupuesto').length,
     };
   }, [sales]);
 
   const getEstadoColor = (estado: string) => {
+    if (isCancelled(estado)) return 'bg-red-100 text-red-700 border-red-200';
     switch (estado) {
       case 'completada': return 'bg-green-100 text-green-700 border-green-200';
       case 'pendiente': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'cancelada': return 'bg-red-100 text-red-700 border-red-200';
       case 'presupuesto': return 'bg-blue-100 text-blue-700 border-blue-200';
       default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
@@ -81,7 +82,6 @@ export const OrdersView: React.FC = () => {
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-bold text-gray-900">Historial de Movimientos</h1>
 
-      {/* 📊 TARJETAS KPI */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {[
           { label: 'Total Vendido', value: formatMoney(stats.totalVendido) },
@@ -97,7 +97,6 @@ export const OrdersView: React.FC = () => {
         ))}
       </div>
 
-      {/* 🔍 FILTROS */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
@@ -122,7 +121,6 @@ export const OrdersView: React.FC = () => {
         </select>
       </div>
 
-      {/* 🧾 LISTADO */}
       <div className="grid gap-3">
         {filteredSales.map((sale) => (
           <div
@@ -136,7 +134,7 @@ export const OrdersView: React.FC = () => {
               </div>
               <div>
                 <p className="font-semibold text-gray-900">{sale.customers?.name || 'Consumidor Final'}</p>
-                <p className="text-xs text-gray-500">{new Date(sale.created_at).toLocaleString()}</p>
+                <p className="text-xs text-gray-500">{new Date(sale.creado_en).toLocaleString()}</p>
               </div>
             </div>
             
@@ -150,7 +148,6 @@ export const OrdersView: React.FC = () => {
         ))}
       </div>
 
-      {/* MODAL */}
       {selected && (
         <OrderDetailsModal
           isOpen={!!selected}

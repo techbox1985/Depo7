@@ -255,7 +255,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'history',
-        element: <DailySales />,
+        element: <OrdersView />,
       },
       {
         path: 'closures',
