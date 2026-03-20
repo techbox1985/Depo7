@@ -140,18 +140,23 @@ export const useCartStore = create<CartState>((set) => ({
   clearCart: () => set({ items: [], subtotal: 0, total: 0, globalPriceList: 'carrito', editingSaleId: null, originalPriceList: null, originalItems: [] }),
 
   loadCartFromSale: (items, priceList) => {
-    const mappedItems: CartItem[] = (items || []).map((item: any) => {
+    const mappedItems: CartItem[] = (items || []).map((item: any, index: number) => {
       const quantity = Math.round(Number(item.quantity || 0));
       const price = roundMoney(Number(item.price || 0));
       const originalPrice = roundMoney(Number(item.original_price ?? item.price ?? 0));
+      const discountValue = Math.round(Number(item.discount_value || 0));
+      const discountAmount = roundMoney(Number(item.discount_amount || 0));
+      
+      const subtotal = roundMoney(quantity * (price - discountAmount / quantity)); // Ajuste para considerar el descuento por unidad
+
       return {
-        product: { id: item.product_id, name: item.product_name || 'Producto' } as Product,
+        product: { id: item.product_id || `temp-${index}`, name: item.product_name || 'Producto' } as Product,
         priceType: (item.price_list === 'mayorista' ? 'mayorista' : 'minorista') as 'minorista' | 'mayorista',
         price, originalPrice, quantity,
-        subtotal: roundMoney(quantity * price),
+        subtotal: roundMoney(quantity * price - discountAmount),
         discountType: (item.discount_type || 'none') as CartDiscountType,
-        discountValue: Math.round(Number(item.discount_value || 0)),
-        discountAmount: roundMoney(Number(item.discount_amount || 0)),
+        discountValue,
+        discountAmount,
       };
     });
     set({ items: mappedItems, ...recalculateTotals(mappedItems) });

@@ -65,7 +65,7 @@ export const useCart = () => {
       calculatedTotal = roundMoney(calculatedTotal);
 
       if (cartStore.editingSaleId) {
-        // 1. Validar stock antes de actualizar (los triggers de DB ajustan el stock final)
+        // 1. Validar stock antes de actualizar
         for (const item of cartStore.items) {
           const { data: prod } = await supabase.from('products').select('stock').eq('id', item.product.id).single();
           const originalQty = cartStore.originalItems.find(oi => oi.product_id === item.product.id)?.quantity || 0;
@@ -73,36 +73,32 @@ export const useCart = () => {
           if (delta > 0 && (prod?.stock || 0) < delta) throw new Error(`Stock insuficiente para ${item.product.name}`);
         }
 
-        // 2. Actualizar venta y items
+        // 2. Actualizar venta y items vía RPC
         const finalPriceList = (options?.priceList && options.priceList !== 'carrito' ? options.priceList : cartStore.originalPriceList) || 'minorista';
         
-        const { error: saleError } = await supabase.from('sales').update({ 
-          total: cartStore.total,
-          total_productos: cartStore.items.length,
-          estado: status,
-          metodo_pago: options?.paymentMethod || 'efectivo',
-          tipo_digital: options?.digitalType || null,
-          cuotas: options?.installments || 1,
-          monto_efectivo: options?.amountCash || 0,
-          monto_digital: options?.amountDigital || 0,
-          tipo_descuento: options?.discountType || 'ninguno',
-          valor_descuento: options?.discountValue || 0,
-          cliente_id: customerId || null,
-          caja_id: cashClosingId || null,
-          price_list: finalPriceList,
-          actualizado_en: new Date().toISOString()
-        }).eq('id', cartStore.editingSaleId);
-        
-        if (saleError) throw saleError;
-        
-        const { error: deleteError } = await supabase.from('sale_items').delete().eq('sale_id', cartStore.editingSaleId);
-        if (deleteError) throw deleteError;
-        
-        const { error: insertError } = await supabase.from('sale_items').insert(itemsPayload.map(item => ({ ...item, sale_id: cartStore.editingSaleId })));
-        if (insertError) throw insertError;
+        const payload = {
+          p_sale_id: cartStore.editingSaleId,
+          p_total: calculatedTotal,
+          p_total_productos: cartStore.items.length,
+          p_estado: status,
+          p_items: itemsPayload,
+          p_metodo_pago: options?.paymentMethod || 'efectivo',
+          p_tipo_digital: options?.digitalType || null,
+          p_cuotas: options?.installments || 1,
+          p_monto_efectivo: options?.amountCash || 0,
+          p_monto_digital: options?.amountDigital || 0,
+          p_tipo_descuento: options?.discountType || 'ninguno',
+          p_valor_descuento: options?.discountValue || 0,
+          p_cliente_id: customerId || null,
+          p_caja_id: cashClosingId || null,
+          p_price_list: finalPriceList
+        };
+
+        const { error: rpcError } = await supabase.rpc('update_sale_with_items', payload);
+        if (rpcError) throw rpcError;
 
         cartStore.clearCart();
-        return { p_items: itemsPayload, p_total: calculatedTotal };
+        return payload;
       } else {
         const payload = { p_total: calculatedTotal, p_cliente_id: customerId || null, p_estado: status, p_items: itemsPayload, p_metodo_pago: options?.paymentMethod || 'efectivo', p_tipo_digital: options?.digitalType || null, p_cuotas: options?.installments || 1, p_monto_efectivo: options?.amountCash || 0, p_monto_digital: options?.amountDigital || 0, p_tipo_descuento: options?.discountType || 'ninguno', p_valor_descuento: options?.discountValue || 0, p_price_list: options?.priceList && options.priceList !== 'carrito' ? options.priceList : null, p_caja_id: cashClosingId || null };
         const { data: rpcData, error: rpcError } = await supabase.rpc('create_sale_with_status', payload);
