@@ -66,6 +66,9 @@ export const useCart = () => {
 
       // 3. Validación defensiva del total
       const totalPago = (options?.amountCash || 0) + (options?.amountDigital || 0);
+      if (status === 'completada' && calculatedTotal === 0 && totalPago === 0) {
+        throw new Error('No se puede completar una venta con total 0 y sin pagos.');
+      }
       if (calculatedTotal === 0 && totalPago > 0) {
         calculatedTotal = totalPago;
       }
