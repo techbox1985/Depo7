@@ -64,6 +64,15 @@ export const useCart = () => {
       else if (options?.discountType === 'fijo') calculatedTotal = Math.max(0, calculatedTotal - (options.discountValue || 0));
       calculatedTotal = roundMoney(calculatedTotal);
 
+      // 3. Validación defensiva del total
+      const totalPago = (options?.amountCash || 0) + (options?.amountDigital || 0);
+      if (calculatedTotal === 0 && totalPago > 0) {
+        calculatedTotal = totalPago;
+      }
+      if (calculatedTotal === 0 && cartStore.items.length > 0) {
+        calculatedTotal = cartStore.total;
+      }
+
       if (cartStore.editingSaleId) {
         // 1. Validar stock antes de actualizar
         for (const item of cartStore.items) {
