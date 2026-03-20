@@ -100,7 +100,7 @@ export interface CartItem {
   originalPrice: number;
   quantity: number;
   subtotal: number;
-  discountType?: 'none' | 'percent' | 'amount';
+  discountType?: 'none' | 'percent' | 'amount' | 'ninguno' | 'porcentaje' | 'fijo';
   discountValue?: number;
   discountAmount?: number;
 }

@@ -25,9 +25,12 @@ interface CartState {
     promotions: Promotion[]
   ) => void;
   clearCart: () => void;
-  loadCartFromSale: (items: any[]) => void;
+  loadCartFromSale: (items: any[], priceList?: string) => void;
   subtotal: number;
   total: number;
+  editingSaleId: string | null;
+  originalPriceList: string | null;
+  setEditingSaleId: (id: string | null, priceList?: string | null) => void;
 }
 
 const normalizeDiscountType = (
@@ -77,6 +80,10 @@ export const useCartStore = create<CartState>((set) => ({
   globalPriceList: 'carrito',
   subtotal: 0,
   total: 0,
+  editingSaleId: null,
+  originalPriceList: null,
+
+  setEditingSaleId: (id, priceList) => set({ editingSaleId: id, originalPriceList: priceList || null }),
 
   setGlobalPriceList: (priceList, promotions) => {
     set((state) => {
@@ -252,9 +259,11 @@ export const useCartStore = create<CartState>((set) => ({
       subtotal: 0,
       total: 0,
       globalPriceList: 'carrito',
+      editingSaleId: null,
+      originalPriceList: null,
     }),
 
-  loadCartFromSale: (items) => {
+  loadCartFromSale: (items, priceList) => {
     const mappedItems: CartItem[] = (items || []).map((item: any) => {
       const quantity = Math.round(Number(item.quantity || 0));
       const price = roundMoney(Number(item.price || 0));

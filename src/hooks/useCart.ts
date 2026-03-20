@@ -7,13 +7,12 @@ import { getBasePrice, getEffectivePrice } from '../utils/priceUtils';
 import { roundMoney } from '../utils/money';
 
 type PriceListType = 'minorista' | 'mayorista' | 'carrito';
-type LineDiscountType = 'none' | 'percent' | 'amount';
 type SaleDiscountType = 'ninguno' | 'porcentaje' | 'fijo';
 
 const isValidUuid = (value: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 
-const toLineDiscountType = (value: unknown): LineDiscountType => {
+const toLineDiscountType = (value: unknown): 'none' | 'percent' | 'amount' => {
   if (value === 'percent' || value === 'porcentaje') return 'percent';
   if (value === 'amount' || value === 'fijo') return 'amount';
   return 'none';
@@ -142,51 +141,85 @@ export const useCart = () => {
 
       calculatedTotal = roundMoney(calculatedTotal);
 
-      const payload = {
-        p_total: calculatedTotal,
-        p_cliente_id: customerId || null,
-        p_estado: status,
-        p_items: itemsPayload,
-        p_metodo_pago: options?.paymentMethod || 'efectivo',
-        p_tipo_digital: options?.digitalType || null,
-        p_cuotas: options?.installments || 1,
-        p_monto_efectivo: options?.amountCash || 0,
-        p_monto_digital: options?.amountDigital || 0,
-        p_tipo_descuento: options?.discountType || 'ninguno',
-        p_valor_descuento: options?.discountValue || 0,
-        p_price_list:
-          options?.priceList && options.priceList !== 'carrito' ? options.priceList : null,
-        p_caja_id: cashClosingId || null,
-      };
-
-      const { data: rpcData, error: rpcError } = await supabase.rpc(
-        'create_sale_with_status',
-        payload
-      );
-
-      if (rpcError) {
-        if (
-          rpcError.message.includes('stock') ||
-          rpcError.message.includes('violates check constraint')
-        ) {
-          throw new Error('Stock insuficiente para uno o más productos');
-        }
-        throw rpcError;
+      const paymentsTotal = (options?.amountCash || 0) + (options?.amountDigital || 0);
+      if (paymentsTotal > 0 && calculatedTotal === 0) {
+        calculatedTotal = paymentsTotal;
       }
 
-      if (cashClosingId && rpcData?.id) {
-        const { error: updateError } = await supabase
+      if (cartStore.editingSaleId) {
+        const finalPriceList = (options?.priceList && options.priceList !== 'carrito' ? options.priceList : cartStore.originalPriceList) || 'minorista';
+
+        const { error: saleError } = await supabase
           .from('sales')
-          .update({ caja_id: cashClosingId })
-          .eq('id', rpcData.id);
+          .update({
+            total: calculatedTotal,
+            estado: status,
+            metodo_pago: options?.paymentMethod || 'efectivo',
+            tipo_digital: options?.digitalType || null,
+            cuotas: options?.installments || 1,
+            monto_efectivo: options?.amountCash || 0,
+            monto_digital: options?.amountDigital || 0,
+            tipo_descuento: options?.discountType || 'ninguno',
+            valor_descuento: options?.discountValue || 0,
+            cliente_id: customerId || null,
+            caja_id: cashClosingId || null,
+            price_list: finalPriceList,
+            actualizado_en: new Date().toISOString(),
+          })
+          .eq('id', cartStore.editingSaleId);
 
-        if (updateError) {
-          console.error('Error linking sale to cash register:', updateError);
+        if (saleError) throw saleError;
+
+        const { error: deleteError } = await supabase
+          .from('sale_items')
+          .delete()
+          .eq('sale_id', cartStore.editingSaleId);
+        
+        if (deleteError) throw deleteError;
+
+        const { error: insertError } = await supabase
+          .from('sale_items')
+          .insert(itemsPayload.map(item => ({ ...item, sale_id: cartStore.editingSaleId })));
+        
+        if (insertError) throw insertError;
+
+        cartStore.clearCart();
+        return { p_items: itemsPayload, p_total: calculatedTotal };
+      } else {
+        const payload = {
+          p_total: calculatedTotal,
+          p_cliente_id: customerId || null,
+          p_estado: status,
+          p_items: itemsPayload,
+          p_metodo_pago: options?.paymentMethod || 'efectivo',
+          p_tipo_digital: options?.digitalType || null,
+          p_cuotas: options?.installments || 1,
+          p_monto_efectivo: options?.amountCash || 0,
+          p_monto_digital: options?.amountDigital || 0,
+          p_tipo_descuento: options?.discountType || 'ninguno',
+          p_valor_descuento: options?.discountValue || 0,
+          p_price_list:
+            options?.priceList && options.priceList !== 'carrito' ? options.priceList : null,
+          p_caja_id: cashClosingId || null,
+        };
+
+        const { data: rpcData, error: rpcError } = await supabase.rpc(
+          'create_sale_with_status',
+          payload
+        );
+
+        if (rpcError) throw rpcError;
+
+        if (cashClosingId && rpcData?.id) {
+          await supabase
+            .from('sales')
+            .update({ caja_id: cashClosingId })
+            .eq('id', rpcData.id);
         }
-      }
 
-      cartStore.clearCart();
-      return payload;
+        cartStore.clearCart();
+        return payload;
+      }
     } catch (err: any) {
       console.error('Error processing sale:', err);
       setError(err.message || 'Error al procesar la venta');

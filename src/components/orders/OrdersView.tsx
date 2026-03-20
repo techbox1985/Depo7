@@ -36,6 +36,16 @@ const isCancelled = (estado?: string | null) => {
   return e === 'anulada' || e === 'cancelada' || e === 'cancelled';
 };
 
+const getTipo = (estado: string) => {
+  if (isCancelled(estado)) return 'Venta';
+  switch (estado) {
+    case 'completada': return 'Venta';
+    case 'pendiente': return 'Pedido';
+    case 'presupuesto': return 'Presupuesto';
+    default: return 'Movimiento';
+  }
+};
+
 export const OrdersView: React.FC = () => {
   const navigate = useNavigate();
   const [sales, setSales] = useState<Sale[]>([]);
@@ -241,22 +251,25 @@ export const OrdersView: React.FC = () => {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
             <tr>
+              <th className="px-6 py-4 text-left font-semibold">Tipo</th>
               <th className="px-6 py-4 text-left font-semibold">Código</th>
               <th className="px-6 py-4 text-left font-semibold">Fecha</th>
               <th className="px-6 py-4 text-left font-semibold">Cliente</th>
               <th className="px-6 py-4 text-left font-semibold">Estado</th>
               <th className="px-6 py-4 text-right font-semibold">Total</th>
+              <th className="px-6 py-4 text-right font-semibold">Efectivo</th>
+              <th className="px-6 py-4 text-right font-semibold">Digital</th>
               <th className="px-6 py-4 text-center font-semibold">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {loading ? (
               <tr>
-                <td className="px-6 py-8 text-center text-gray-500" colSpan={6}>Cargando...</td>
+                <td className="px-6 py-8 text-center text-gray-500" colSpan={9}>Cargando...</td>
               </tr>
             ) : salesFiltradas.length === 0 ? (
               <tr>
-                <td className="px-6 py-8 text-center text-gray-500" colSpan={6}>No hay movimientos</td>
+                <td className="px-6 py-8 text-center text-gray-500" colSpan={9}>No hay movimientos</td>
               </tr>
             ) : (
               salesFiltradas.map((sale) => (
@@ -265,6 +278,7 @@ export const OrdersView: React.FC = () => {
                   className="hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => setSelected(sale)}
                 >
+                  <td className="px-6 py-4 text-gray-700 font-medium">{getTipo(sale.estado)}</td>
                   <td className="px-6 py-4 font-medium text-gray-900">{sale.codigo_venta}</td>
                   <td className="px-6 py-4 text-gray-600">
                     {new Date(sale.fecha || sale.creado_en).toLocaleString()}
@@ -288,6 +302,8 @@ export const OrdersView: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 font-bold text-gray-900 text-right">{formatMoney(sale.total)}</td>
+                  <td className="px-6 py-4 text-gray-700 text-right">{formatMoney(sale.monto_efectivo)}</td>
+                  <td className="px-6 py-4 text-gray-700 text-right">{formatMoney(sale.monto_digital)}</td>
                   <td className="px-6 py-4">
                     <div className="flex justify-center items-center gap-3">
                       <button

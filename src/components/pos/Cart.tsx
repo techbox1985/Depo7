@@ -18,7 +18,7 @@ import { useProductsStore } from '../../store/useProductsStore';
 import { CobroModal } from './CobroModal';
 import { formatMoney } from '../../utils/money';
 
-type ModalStatus = 'completada' | 'pendiente' | 'presupuesto';
+type ModalStatus = string;
 type SaleDiscountType = 'ninguno' | 'porcentaje' | 'fijo';
 type GlobalPriceList = 'minorista' | 'mayorista' | 'carrito';
 

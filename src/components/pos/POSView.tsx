@@ -9,10 +9,9 @@ import { supabase } from '../../services/supabaseClient';
 
 export const POSView: React.FC = () => {
   const { currentSession, isLoading, fetchCurrentSession } = useCashStore();
-  const { loadCartFromSale, clearCart } = useCartStore();
+  const { loadCartFromSale, clearCart, setEditingSaleId, editingSaleId } = useCartStore();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingSaleId, setEditingSaleId] = useState<string | null>(null);
   const [isEditLoading, setIsEditLoading] = useState(false);
 
   useEffect(() => {
@@ -37,25 +36,26 @@ export const POSView: React.FC = () => {
       try {
         console.log('EDIT MODE → Cargando venta:', editId);
 
-        const { data: items, error } = await supabase
+        const { data: sale, error: saleError } = await supabase
+          .from('sales')
+          .select('price_list')
+          .eq('id', editId)
+          .single();
+
+        if (saleError) throw saleError;
+
+        const { data: items, error: itemsError } = await supabase
           .from('sale_items')
           .select('*')
           .eq('sale_id', editId);
 
-        if (error) {
-          console.error('Error cargando items:', error);
-          alert('No se pudo cargar la venta para edición.');
-          return;
-        }
-
-        console.log('Items cargados:', items);
+        if (itemsError) throw itemsError;
 
         clearCart();
-        loadCartFromSale(items || []);
-        setEditingSaleId(editId);
+        loadCartFromSale(items || [], sale.price_list);
+        setEditingSaleId(editId, sale.price_list);
 
         localStorage.removeItem('pos_edit_sale_id');
-        console.log('EDIT MODE → Fin de carga');
       } catch (err) {
         console.error('Error en edición:', err);
         alert('Ocurrió un error al cargar la venta para edición.');
@@ -65,7 +65,7 @@ export const POSView: React.FC = () => {
     };
 
     loadSale();
-  }, [loadCartFromSale, clearCart]);
+  }, [loadCartFromSale, clearCart, setEditingSaleId]);
 
   if (isLoading || isEditLoading) {
     return (
