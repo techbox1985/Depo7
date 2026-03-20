@@ -25,18 +25,23 @@ interface CartState {
     promotions: Promotion[]
   ) => void;
   clearCart: () => void;
+  loadCartFromSale: (items: any[]) => void;
   subtotal: number;
   total: number;
 }
 
-const normalizeDiscountType = (discountType: CartDiscountType): 'none' | 'percent' | 'amount' => {
+const normalizeDiscountType = (
+  discountType: CartDiscountType
+): 'none' | 'percent' | 'amount' => {
   if (discountType === 'percent' || discountType === 'porcentaje') return 'percent';
   if (discountType === 'amount' || discountType === 'fijo') return 'amount';
   return 'none';
 };
 
 const calculateItemValues = (item: CartItem) => {
-  const normalizedDiscountType = normalizeDiscountType((item.discountType as CartDiscountType) || 'none');
+  const normalizedDiscountType = normalizeDiscountType(
+    (item.discountType as CartDiscountType) || 'none'
+  );
   const baseUnitPrice = Math.round(Number(item.price || 0));
   const discountValue = Math.round(Number(item.discountValue || 0));
 
@@ -61,7 +66,9 @@ const calculateItemValues = (item: CartItem) => {
 };
 
 const recalculateTotals = (items: CartItem[]) => {
-  const total = roundMoney(items.reduce((acc, item) => acc + Math.round(Number(item.subtotal || 0)), 0));
+  const total = roundMoney(
+    items.reduce((acc, item) => acc + Math.round(Number(item.subtotal || 0)), 0)
+  );
   return { subtotal: total, total };
 };
 
@@ -74,9 +81,14 @@ export const useCartStore = create<CartState>((set) => ({
   setGlobalPriceList: (priceList, promotions) => {
     set((state) => {
       const newItems = state.items.map((item) => {
-        const effectivePriceType = priceList === 'carrito' ? item.priceType : priceList;
-        const price = roundMoney(getEffectivePrice(item.product, effectivePriceType, promotions));
-        const originalPrice = roundMoney(getBasePrice(item.product, effectivePriceType));
+        const effectivePriceType =
+          priceList === 'carrito' ? item.priceType : priceList;
+        const price = roundMoney(
+          getEffectivePrice(item.product, effectivePriceType, promotions)
+        );
+        const originalPrice = roundMoney(
+          getBasePrice(item.product, effectivePriceType)
+        );
 
         const updatedItem = {
           ...item,
@@ -105,13 +117,16 @@ export const useCartStore = create<CartState>((set) => ({
 
   addItem: (product, priceType, quantity, promotions) => {
     set((state) => {
-      const effectivePriceType = state.globalPriceList === 'carrito' ? priceType : state.globalPriceList;
+      const effectivePriceType =
+        state.globalPriceList === 'carrito' ? priceType : state.globalPriceList;
 
       const existingItemIndex = state.items.findIndex(
         (item) => item.product.id === product.id && item.priceType === effectivePriceType
       );
 
-      const price = roundMoney(getEffectivePrice(product, effectivePriceType, promotions));
+      const price = roundMoney(
+        getEffectivePrice(product, effectivePriceType, promotions)
+      );
       const originalPrice = roundMoney(getBasePrice(product, effectivePriceType));
 
       const newItems = [...state.items];
@@ -238,4 +253,36 @@ export const useCartStore = create<CartState>((set) => ({
       total: 0,
       globalPriceList: 'carrito',
     }),
+
+  loadCartFromSale: (items) => {
+    const mappedItems: CartItem[] = (items || []).map((item: any) => {
+      const quantity = Math.round(Number(item.quantity || 0));
+      const price = roundMoney(Number(item.price || 0));
+      const originalPrice = roundMoney(
+        Number(item.original_price ?? item.price ?? 0)
+      );
+
+      return {
+        product: {
+          id: item.product_id,
+          name: item.product_name || 'Producto',
+        } as Product,
+        priceType: (item.price_list === 'mayorista' ? 'mayorista' : 'minorista') as
+          | 'minorista'
+          | 'mayorista',
+        price,
+        originalPrice,
+        quantity,
+        subtotal: roundMoney(quantity * price),
+        discountType: (item.discount_type || 'none') as CartDiscountType,
+        discountValue: Math.round(Number(item.discount_value || 0)),
+        discountAmount: roundMoney(Number(item.discount_amount || 0)),
+      };
+    });
+
+    set({
+      items: mappedItems,
+      ...recalculateTotals(mappedItems),
+    });
+  },
 }));

@@ -1,33 +1,65 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Modal } from '../ui/Modal';
-import { SaleItem } from '../../types';
 import { supabase } from '../../services/supabaseClient';
-import { Spinner } from '../ui/Spinner';
 import { Button } from '../ui/Button';
-import { CheckCircle, Ban, Printer, Edit } from 'lucide-react';
-import { formatMoney } from '../../utils/money';
-import { buildPrintHtml, PostActionData } from '../pos/Cart';
+import { buildPrintHtml, PostActionData, CartSnapshotItem } from '../pos/Cart';
+
+type Sale = {
+  id: string;
+  codigo_venta?: string;
+  estado: string;
+  fecha?: string;
+  creado_en?: string;
+  total?: number;
+  customers?: { name?: string | null } | null;
+};
+
+type SaleItem = {
+  id: string;
+  sale_id: string;
+  product_id?: string;
+  product_name?: string;
+  quantity?: number;
+  price?: number;
+  original_price?: number;
+};
 
 interface OrderDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  order: any;
-  onActionComplete: () => void;
+  order: Sale;
+  onActionComplete?: () => Promise<void> | void;
 }
 
-export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, onClose, order, onActionComplete }) => {
+const formatMoney = (value: number | null | undefined) =>
+  `$${Math.round(Number(value || 0)).toLocaleString('es-AR')}`;
+
+const isCancelled = (estado?: string | null) => {
+  if (!estado) return false;
+  const e = estado.toLowerCase().trim();
+  return e === 'anulada' || e === 'cancelada' || e === 'cancelled';
+};
+
+export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
+  isOpen,
+  onClose,
+  order,
+  onActionComplete,
+}) => {
+  const navigate = useNavigate();
   const [items, setItems] = useState<SaleItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && order?.id) {
       fetchItems();
     }
-  }, [isOpen, order.id]);
+  }, [isOpen, order?.id]);
 
   const fetchItems = async () => {
-    setIsLoading(true);
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('sale_items')
@@ -36,94 +68,102 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, on
 
       if (error) {
         console.error('Error fetching order items:', error);
+        setItems([]);
       } else {
-        setItems(data || []);
+        setItems((data as SaleItem[]) || []);
       }
     } catch (error) {
       console.error('Error fetching order items:', error);
+      setItems([]);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
-
-  const isCancelled = ['anulada', 'cancelada', 'cancelled'].includes(order.estado.toLowerCase());
 
   const handleCancel = async () => {
-    if (isCancelled) return;
-    if (!window.confirm(`¿Estás seguro de que deseas anular este movimiento (${order.codigo_venta || order.id})?`)) return;
-    
-    setActionLoading(true);
-    try {
-      const { error } = await supabase.rpc('anular_venta', { p_sale_id: order.id });
-      if (error) throw error;
-      onActionComplete();
-      onClose();
-    } catch (e) {
-      console.error('Error al cancelar:', e);
-      alert('Error al cancelar el movimiento.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleConvertToSale = async () => {
-    if (order.estado !== 'presupuesto') return;
-    if (!window.confirm('¿Confirmar conversión a venta?')) return;
-    
-    setActionLoading(true);
-    try {
-      const { error } = await supabase.rpc('convertir_presupuesto_a_venta', { p_sale_id: order.id });
-      if (error) throw error;
-      onActionComplete();
-      onClose();
-    } catch (e) {
-      console.error('Error al convertir:', e);
-      alert('Error al convertir a venta.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleReprint = () => {
-    const printData: PostActionData = {
-      status: order.estado === 'completada' ? 'completada' : order.estado === 'presupuesto' ? 'presupuesto' : 'pendiente',
-      items: items.map(item => ({
-        productId: item.product_id,
-        productName: item.product_name,
-        quantity: item.quantity,
-        unitPrice: item.price,
-        subtotal: item.price * item.quantity,
-      })),
-      subtotal: items.reduce((acc, item) => acc + item.price * item.quantity, 0),
-      total: order.total,
-      createdAt: order.creado_en,
-    };
-
-    const printWindow = window.open('', '_blank', 'width=900,height=700');
-    if (!printWindow) {
-      alert('No se pudo abrir la ventana de impresión.');
+    if (isCancelled(order.estado)) {
+      alert('La venta ya está cancelada');
       return;
     }
 
-    printWindow.document.open();
-    printWindow.document.write(buildPrintHtml(printData));
-    printWindow.document.close();
+    const confirmed = window.confirm(
+      `¿Estás seguro de que deseas anular el movimiento ${order.codigo_venta || order.id}?`
+    );
+    if (!confirmed) return;
+
+    setActionLoading(true);
+
+    try {
+      const { error } = await supabase.rpc('anular_venta', {
+        p_sale_id: order.id,
+      });
+
+      if (error) throw error;
+
+      alert('Movimiento anulado correctamente');
+
+      if (onActionComplete) {
+        await onActionComplete();
+      } else {
+        onClose();
+      }
+    } catch (e: any) {
+      console.error('Error cancelar venta', e);
+      alert(`Error al cancelar el movimiento: ${e?.message || 'sin detalle'}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleReprint = async () => {
+    try {
+      const cartItems: CartSnapshotItem[] = items.map((item) => ({
+        productId: item.product_id || '',
+        productName: item.product_name || 'Producto',
+        quantity: Number(item.quantity || 0),
+        unitPrice: Number(item.price || 0),
+        subtotal: Math.round(Number(item.quantity || 0) * Number(item.price || 0)),
+      }));
+
+      const ticketData: PostActionData = {
+        status: order.estado,
+        items: cartItems,
+        subtotal: cartItems.reduce((acc, item) => acc + item.subtotal, 0),
+        total: Number(order.total || 0),
+        createdAt: order.fecha || order.creado_en || new Date().toISOString(),
+      };
+
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        alert('El navegador bloqueó la ventana de impresión.');
+        return;
+      }
+
+      printWindow.document.write(buildPrintHtml(ticketData));
+      printWindow.document.close();
+    } catch (e) {
+      console.error('Error al reimprimir:', e);
+      alert('Error al reimprimir el ticket.');
+    }
   };
 
   const handleEdit = () => {
-    alert(`La edición del movimiento ${order.codigo_venta || order.id} no está implementada.`);
+    console.log('EDITAR → POS (MODAL)', order.id);
+    localStorage.setItem('pos_edit_sale_id', order.id);
+    onClose();
+    navigate('/pos');
+  };
+
+  const handleConvertToSale = async () => {
+    alert('Convertir a venta solo debe implementarse para presupuestos');
   };
 
   const getTitle = () => {
-    switch (order.estado) {
-      case 'pendiente': return 'Detalles del Pedido';
-      case 'presupuesto': return 'Detalles del Presupuesto';
-      case 'completada': return 'Detalles de la Venta';
-      case 'cancelada':
-      case 'anulada':
-      case 'cancelled': return 'Detalles de Movimiento Cancelado';
-      default: return 'Detalles del Movimiento';
-    }
+    if (isCancelled(order.estado)) return 'Detalles de Movimiento Cancelado';
+    if (order.estado === 'presupuesto') return 'Detalles de Presupuesto';
+    if (order.estado === 'pendiente') return 'Detalles del Pedido';
+    if (order.estado === 'completada') return 'Detalles de la Venta';
+    return 'Detalles del Movimiento';
   };
 
   return (
@@ -137,7 +177,9 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, on
             </div>
             <div>
               <p className="text-gray-500 font-medium">Fecha</p>
-              <p className="text-gray-900">{new Date(order.creado_en).toLocaleString()}</p>
+              <p className="text-gray-900">
+                {new Date(order.fecha || order.creado_en || new Date().toISOString()).toLocaleString()}
+              </p>
             </div>
             <div>
               <p className="text-gray-500 font-medium">Cliente</p>
@@ -145,17 +187,15 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, on
             </div>
             <div>
               <p className="text-gray-500 font-medium">Total</p>
-              <p className="text-gray-900 font-bold">{formatMoney(Number(order.total))}</p>
+              <p className="text-gray-900 font-bold">{formatMoney(order.total)}</p>
             </div>
           </div>
         </div>
 
         <div>
           <h3 className="text-lg font-medium text-gray-900 mb-4">Productos</h3>
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Spinner size="md" />
-            </div>
+          {loading ? (
+            <p className="text-center text-gray-500 py-4">Cargando productos...</p>
           ) : items.length === 0 ? (
             <p className="text-center text-gray-500 py-4">No hay productos en este registro.</p>
           ) : (
@@ -163,10 +203,18 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, on
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Unitario</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subtotal</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Producto
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Cantidad
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Precio Unitario
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Subtotal
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -182,7 +230,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, on
                         {formatMoney(item.price)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {formatMoney(item.quantity * item.price)}
+                        {formatMoney(Number(item.quantity || 0) * Number(item.price || 0))}
                       </td>
                     </tr>
                   ))}
@@ -192,35 +240,29 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ isOpen, on
           )}
         </div>
 
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-          <Button type="button" variant="secondary" onClick={onClose} disabled={actionLoading}>
+        <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
+          <Button type="button" variant="secondary" onClick={onClose}>
             Cerrar
           </Button>
-          
-          <Button onClick={handleReprint} className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700" disabled={actionLoading}>
-            <Printer className="h-4 w-4" />
+
+          <Button type="button" variant="secondary" onClick={handleReprint}>
             Reimprimir
           </Button>
 
-          <Button onClick={handleEdit} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700" disabled={actionLoading}>
-            <Edit className="h-4 w-4" />
+          <Button type="button" variant="secondary" onClick={handleEdit}>
             Editar
           </Button>
 
-          {!isCancelled && (
-            <>
-              {order.estado === 'presupuesto' && (
-                <Button onClick={handleConvertToSale} className="flex items-center gap-2 bg-green-600 hover:bg-green-700" disabled={actionLoading}>
-                  <CheckCircle className="h-4 w-4" />
-                  Convertir a Venta
-                </Button>
-              )}
-              
-              <Button onClick={handleCancel} className="flex items-center gap-2 bg-red-600 hover:bg-red-700" disabled={actionLoading}>
-                <Ban className="h-4 w-4" />
-                Anular
-              </Button>
-            </>
+          {!isCancelled(order.estado) && (
+            <Button type="button" variant="secondary" onClick={handleCancel} disabled={actionLoading}>
+              Anular
+            </Button>
+          )}
+
+          {order.estado === 'presupuesto' && (
+            <Button type="button" onClick={handleConvertToSale}>
+              Convertir a Venta
+            </Button>
           )}
         </div>
       </div>
