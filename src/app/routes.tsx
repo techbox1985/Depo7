@@ -12,6 +12,7 @@ import { PurchasesList } from '../components/purchases/PurchasesList';
 import { OrdersView } from '../components/orders/OrdersView';
 import { Login } from '../components/auth/Login';
 import { PriceListsView } from '../components/price-lists/PriceListsView';
+import { ShortcutsView } from '../components/shortcuts/ShortcutsView';
 
 type DashboardStats = {
   salesToday: number;
@@ -298,6 +299,10 @@ export const router = createBrowserRouter([
             <PriceListsView />
           </div>
         ),
+      },
+      {
+        path: 'shortcuts',
+        element: <ShortcutsView />,
       },
     ],
   },

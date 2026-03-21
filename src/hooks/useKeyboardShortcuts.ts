@@ -20,7 +20,11 @@ export const useKeyboardShortcuts = (shortcuts: Shortcut[]) => {
       }
 
       shortcuts.forEach((shortcut) => {
-        if (e.key === shortcut.key) {
+        // Handle '?' which is Shift + '/'
+        const isQuestionMark = e.key === '?' || (e.key === '/' && e.shiftKey);
+        const matchesKey = shortcut.key === '?' ? isQuestionMark : e.key === shortcut.key;
+
+        if (matchesKey) {
           if (shortcut.context && shortcut.context !== activeContext) return;
           e.preventDefault();
           shortcut.callback();

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { ShoppingCart, Package, Tag, LayoutDashboard, Truck, FileText, ListOrdered } from 'lucide-react';
+import { ShoppingCart, Package, Tag, LayoutDashboard, Truck, FileText, ListOrdered, Keyboard } from 'lucide-react';
 import { cn } from '../ui/Button';
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
   { name: 'Promociones', path: '/promotions', icon: Tag },
   { name: 'Historial de Ventas', path: '/history', icon: FileText },
   { name: 'Cierres de Caja', path: '/closures', icon: FileText },
+  { name: 'Atajos', path: '/shortcuts', icon: Keyboard },
 ];
 
 const devNavItems = [
