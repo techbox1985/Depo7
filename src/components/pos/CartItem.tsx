@@ -38,14 +38,16 @@ export const CartItem: React.FC<CartItemProps> = ({ item }) => {
   const showPlaceholder = !imageUrl || imageError;
 
   const handleIncrease = () => {
-    if (item.quantity < item.product.stock) {
-      updateQuantity(item.product.id, item.quantity + 1);
+    const step = item.product.es_fraccionable ? 0.25 : 1;
+    if (item.quantity + step <= item.product.stock) {
+      updateQuantity(item.product.id, item.quantity + step);
     }
   };
 
   const handleDecrease = () => {
-    if (item.quantity > 1) {
-      updateQuantity(item.product.id, item.quantity - 1);
+    const step = item.product.es_fraccionable ? 0.25 : 1;
+    if (item.quantity - step >= 0.25) {
+      updateQuantity(item.product.id, item.quantity - step);
     }
   };
 
@@ -122,12 +124,14 @@ export const CartItem: React.FC<CartItemProps> = ({ item }) => {
                 type="button"
                 onClick={handleDecrease}
                 className="px-2 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
-                disabled={item.quantity <= 1}
+                disabled={item.product.es_fraccionable ? item.quantity <= 0.25 : item.quantity <= 1}
               >
                 <Minus className="h-3 w-3" />
               </button>
 
-              <span className="min-w-[2rem] px-2 py-1 text-center">{item.quantity}</span>
+              <span className="min-w-[2rem] px-2 py-1 text-center">
+                {item.product.es_fraccionable ? Number(item.quantity.toFixed(2)) : Math.round(item.quantity)}
+              </span>
 
               <button
                 type="button"

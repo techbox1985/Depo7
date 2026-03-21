@@ -37,9 +37,11 @@ export const POSView: React.FC = () => {
         if (saleError) throw saleError;
         const { data: items, error: itemsError } = await supabase.from('sale_items').select('*').eq('sale_id', editId);
         if (itemsError) throw itemsError;
+        const { data: products, error: productsError } = await supabase.from('products').select('*');
+        if (productsError) throw productsError;
 
         clearCart();
-        loadCartFromSale(items || [], sale.price_list);
+        loadCartFromSale(items || [], products || [], sale.price_list);
         setEditingSaleId(editId, sale.price_list, items || []);
         localStorage.removeItem('pos_edit_sale_id');
       } catch (err) {

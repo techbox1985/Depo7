@@ -57,7 +57,24 @@ export const useCart = () => {
         finalItemPrice = Math.max(0, roundMoney(finalItemPrice));
         const itemSubtotal = roundMoney(finalItemPrice * Math.round(item.quantity));
         calculatedTotal += itemSubtotal;
-        return { product_id: item.product.id, product_name: item.product.name, quantity: Math.round(item.quantity), price: finalItemPrice, original_price: roundMoney(originalPrice), price_list: effectivePriceList, discount_type: normalizedDiscountType, discount_value: safeDiscountValue, discount_amount: itemDiscountAmount };
+
+        const isFractionable = item.product.es_fraccionable && item.product.factor_fraccionamiento;
+        const factor = isFractionable ? (item.product.factor_fraccionamiento || 1) : 1;
+        const quantityUnits = item.quantity * factor;
+        const pricePerUnit = finalItemPrice / factor;
+        const originalPricePerUnit = originalPrice / factor;
+
+        return { 
+          product_id: item.product.id, 
+          product_name: item.product.name, 
+          quantity: quantityUnits, 
+          price: pricePerUnit, 
+          original_price: roundMoney(originalPricePerUnit), 
+          price_list: effectivePriceList, 
+          discount_type: normalizedDiscountType, 
+          discount_value: safeDiscountValue, 
+          discount_amount: itemDiscountAmount 
+        };
       });
 
       if (options?.discountType === 'porcentaje') calculatedTotal = calculatedTotal * (1 - (options.discountValue || 0) / 100);

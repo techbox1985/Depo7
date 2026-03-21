@@ -85,9 +85,19 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, on
         <div className="mb-2 flex items-start justify-between">
           <h3 className="line-clamp-2 text-sm font-medium text-gray-900" title={product.name}>
             {product.name}
+            {product.es_fraccionable && product.factor_fraccionamiento && (
+              <span className="ml-1 text-xs font-normal text-blue-600">
+                (Pack x{product.factor_fraccionamiento})
+              </span>
+            )}
           </h3>
 
-          <div className="ml-2 flex items-center gap-2">
+          <div className="ml-2 flex flex-col items-end gap-1">
+            {product.es_fraccionable && product.factor_fraccionamiento && (
+              <span className="inline-flex whitespace-nowrap rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800">
+                Fraccionable
+              </span>
+            )}
             {onViewHistory && (
               <button
                 type="button"

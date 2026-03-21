@@ -39,6 +39,8 @@ export interface Product {
   arqueo: number | null;
   costo: number | null;
   minimo: number | null;
+  es_fraccionable: boolean;
+  factor_fraccionamiento: number | null;
   created_at: string;
   updated_at: string;
   barcode: string | null;
