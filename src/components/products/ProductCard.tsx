@@ -94,7 +94,7 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, on
 
           <div className="ml-2 flex flex-col items-end gap-1">
             {product.es_fraccionable && product.factor_fraccionamiento && (
-              <span className="inline-flex whitespace-nowrap rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800">
+              <span className="inline-flex whitespace-nowrap rounded-full bg-blue-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
                 Fraccionable
               </span>
             )}

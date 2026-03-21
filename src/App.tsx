@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { router } from './app/routes';
 import { syncService } from './services/syncService';
+import { InstallButton } from './components/InstallButton';
 
 export default function App() {
   useEffect(() => {
@@ -17,5 +18,10 @@ export default function App() {
     return () => window.removeEventListener('online', handleOnline);
   }, []);
 
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <RouterProvider router={router} />
+      <InstallButton />
+    </>
+  );
 }
