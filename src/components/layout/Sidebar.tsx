@@ -23,7 +23,7 @@ const devNavItems = [
 
 export const Sidebar: React.FC = () => {
   return (
-    <aside className="hidden lg:flex flex-col w-64 border-r border-gray-200 bg-white h-[calc(100vh-4rem)] relative z-10">
+    <aside className="flex flex-col w-64 border-r border-gray-200 bg-white h-full relative z-10">
       <nav className="flex-1 space-y-1 px-2 py-4">
         {navItems.map((item) => {
           const Icon = item.icon;
