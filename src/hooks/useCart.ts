@@ -57,19 +57,20 @@ export const useCart = () => {
         }
         itemDiscountAmount = Math.max(0, roundMoney(itemDiscountAmount));
         finalItemPrice = Math.max(0, roundMoney(finalItemPrice));
-        const itemSubtotal = roundMoney(finalItemPrice * Math.round(item.quantity));
+        const itemSubtotal = roundMoney(finalItemPrice * item.quantity);
         calculatedTotal += itemSubtotal;
 
-        const isFractionable = item.product.es_fraccionable && item.product.factor_fraccionamiento;
-        const factor = isFractionable ? (item.product.factor_fraccionamiento || 1) : 1;
-        const quantityUnits = item.quantity * factor;
+        const isFractionable = item.product.es_fraccionable;
+        const factor = isFractionable ? Number(item.product.factor_fraccionamiento || 1) : 1;
+        const quantityToSend = isFractionable ? Math.round(item.quantity * factor) : Math.round(item.quantity);
+        
         const pricePerUnit = finalItemPrice / factor;
         const originalPricePerUnit = originalPrice / factor;
 
         return { 
           product_id: item.product.id, 
           product_name: item.product.name, 
-          quantity: quantityUnits, 
+          quantity: quantityToSend, 
           price: pricePerUnit, 
           original_price: roundMoney(originalPricePerUnit), 
           price_list: effectivePriceList, 

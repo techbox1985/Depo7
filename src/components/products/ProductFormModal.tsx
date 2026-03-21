@@ -58,6 +58,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
         price: 0,
         wholesale_price: 0,
         costo: 0,
+        es_fraccionable: false,
+        factor_fraccionamiento: 1,
       }
     );
 
@@ -80,6 +82,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
           price: 0,
           wholesale_price: 0,
           costo: 0,
+          es_fraccionable: false,
+          factor_fraccionamiento: 1,
         }
       );
     }, [isOpen, product]);
@@ -462,6 +466,43 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
                   </select>
                   {errors.estado && <p className="mt-1 text-xs text-red-600">{errors.estado}</p>}
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 items-center">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="es_fraccionable"
+                    checked={Boolean(formData.es_fraccionable)}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        es_fraccionable: e.target.checked,
+                        factor_fraccionamiento: e.target.checked ? (formData.factor_fraccionamiento || 1) : undefined,
+                      })
+                    }
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <label htmlFor="es_fraccionable" className="text-sm font-medium text-gray-700">
+                    ¿Es fraccionable?
+                  </label>
+                </div>
+
+                {formData.es_fraccionable && (
+                  <Input
+                    label="Factor de fraccionamiento"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={formData.factor_fraccionamiento ?? 1}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        factor_fraccionamiento: getSafeNumber(e.target.value, 1),
+                      })
+                    }
+                  />
+                )}
               </div>
 
               <div className="mt-4 border-t border-gray-200 pt-4">

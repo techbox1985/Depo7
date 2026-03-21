@@ -11,7 +11,7 @@ import { ProductFormModal } from './ProductFormModal';
 import { ProductHistoryModal } from './ProductHistoryModal';
 import { Product } from '../../types';
 import { formatMoney } from '../../utils/money';
-
+import { getFractionalLabel } from '../../utils/stockUtils';
 import { getBasePrice } from '../../utils/priceUtils';
 
 export const ProductGrid: React.FC = React.memo(() => {
@@ -277,8 +277,17 @@ export const ProductGrid: React.FC = React.memo(() => {
                             )}
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900 truncate max-w-[200px]" title={product.name}>{product.name}</div>
-                            <div className="text-sm text-gray-500">{product.barcode || 'Sin código'}</div>
+                            <div className="text-sm font-medium text-gray-900 truncate max-w-[200px]" title={product.name}>
+                              {product.name}
+                            </div>
+                            {getFractionalLabel(product) && (
+                              <div className="mt-1">
+                                <span className="inline-flex whitespace-nowrap rounded-full bg-blue-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                                  {getFractionalLabel(product)}
+                                </span>
+                              </div>
+                            )}
+                            <div className="text-sm text-gray-500 mt-1">{product.barcode || 'Sin código'}</div>
                           </div>
                         </div>
                       </td>
@@ -379,4 +388,3 @@ export const ProductGrid: React.FC = React.memo(() => {
     </div>
   );
 });
-

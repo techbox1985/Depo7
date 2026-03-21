@@ -37,17 +37,52 @@ export const CartItem: React.FC<CartItemProps> = ({ item }) => {
   const imageUrl = String(item.product.image_url || '').trim();
   const showPlaceholder = !imageUrl || imageError;
 
-  const handleIncrease = () => {
-    const step = item.product.es_fraccionable ? 0.25 : 1;
-    if (item.quantity + step <= item.product.stock) {
-      updateQuantity(item.product.id, item.quantity + step);
+  const step = useMemo(() => {
+    if (!item.product.es_fraccionable) return 1;
+    const factor = item.product.factor_fraccionamiento;
+    return (factor && factor > 0) ? (1 / factor) : 0.25;
+  }, [item.product.es_fraccionable, item.product.factor_fraccionamiento]);
+
+  const normalize = (num: number) => Math.round(num * 1000) / 1000;
+
+  const handleIncrease = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nextQty = normalize(item.quantity + step);
+    if (nextQty <= item.product.stock) {
+      updateQuantity(item.product.id, nextQty);
     }
   };
 
-  const handleDecrease = () => {
-    const step = item.product.es_fraccionable ? 0.25 : 1;
-    if (item.quantity - step >= 0.25) {
-      updateQuantity(item.product.id, item.quantity - step);
+  const handleDecrease = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nextQty = normalize(item.quantity - step);
+    if (nextQty > 0) {
+      updateQuantity(item.product.id, nextQty);
+    }
+  };
+
+  const [quantityInput, setQuantityInput] = useState(item.quantity.toString().replace('.', ','));
+
+  useEffect(() => {
+    setQuantityInput(item.quantity.toString().replace('.', ','));
+  }, [item.quantity]);
+
+  const handleManualQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(',', '.');
+    setQuantityInput(e.target.value);
+
+    const numValue = parseFloat(value);
+
+    if (value === '') return;
+
+    if (!item.product.es_fraccionable && value.includes('.')) {
+      alert('Este producto no es fraccionable');
+      setQuantityInput(Math.round(item.quantity).toString());
+      return;
+    }
+
+    if (!isNaN(numValue) && numValue > 0 && numValue <= item.product.stock) {
+      updateQuantity(item.product.id, numValue);
     }
   };
 
@@ -122,22 +157,23 @@ export const CartItem: React.FC<CartItemProps> = ({ item }) => {
             <div className="flex items-center rounded-md border border-gray-300">
               <button
                 type="button"
-                onClick={handleDecrease}
+                onClick={(e) => handleDecrease(e)}
                 className="px-2 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
-                disabled={item.product.es_fraccionable ? item.quantity <= 0.25 : item.quantity <= 1}
               >
                 <Minus className="h-3 w-3" />
               </button>
 
-              <span className="min-w-[2rem] px-2 py-1 text-center">
-                {item.product.es_fraccionable ? Number(item.quantity.toFixed(2)) : Math.round(item.quantity)}
-              </span>
+              <input
+                type="text"
+                value={quantityInput}
+                onChange={handleManualQuantityChange}
+                className="w-16 px-1 py-1 text-center border-none focus:ring-0"
+              />
 
               <button
                 type="button"
-                onClick={handleIncrease}
+                onClick={(e) => handleIncrease(e)}
                 className="px-2 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
-                disabled={item.quantity >= item.product.stock}
               >
                 <Plus className="h-3 w-3" />
               </button>
