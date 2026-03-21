@@ -14,18 +14,13 @@ export const useKeyboardShortcuts = (shortcuts: Shortcut[]) => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      console.log('Key pressed:', e.key, 'Shift:', e.shiftKey, 'Context:', activeContext);
       const target = e.target as HTMLElement;
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) {
         return;
       }
 
       shortcuts.forEach((shortcut) => {
-        // Handle '?' which is Shift + '/'
-        const isQuestionMark = e.key === '?' || (e.key === '/' && e.shiftKey);
-        const matchesKey = shortcut.key === '?' ? isQuestionMark : e.key === shortcut.key;
-
-        if (matchesKey) {
+        if (e.key === shortcut.key) {
           if (shortcut.context && shortcut.context !== activeContext) return;
           e.preventDefault();
           shortcut.callback();
@@ -33,7 +28,6 @@ export const useKeyboardShortcuts = (shortcuts: Shortcut[]) => {
       });
     };
 
-    console.log('KeyboardShortcutsHandler mounted');
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [shortcuts, activeContext]);

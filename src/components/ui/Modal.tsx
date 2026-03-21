@@ -10,25 +10,22 @@ interface ModalProps {
 }
 
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
-  const { setActiveContext, setModalOnClose } = useKeyboardContext();
+  const { setActiveContext } = useKeyboardContext();
 
   useEffect(() => {
     if (isOpen) {
       setActiveContext('modal');
-      setModalOnClose(onClose);
       document.body.style.overflow = 'hidden';
     } else {
       setActiveContext('default');
-      setModalOnClose(null);
       document.body.style.overflow = 'unset';
     }
 
     return () => {
       document.body.style.overflow = 'unset';
       setActiveContext('default');
-      setModalOnClose(null);
     };
-  }, [isOpen, setActiveContext, setModalOnClose, onClose]);
+  }, [isOpen, setActiveContext]);
 
   if (!isOpen) return null;
 
