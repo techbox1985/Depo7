@@ -23,15 +23,15 @@ export default defineConfig(({mode}) => {
           start_url: '/',
           icons: [
             {
-              src: '/icon-192.svg',
+              src: 'https://placehold.co/192x192.png',
               sizes: '192x192',
-              type: 'image/svg+xml',
+              type: 'image/png',
               purpose: 'any maskable'
             },
             {
-              src: '/icon-512.svg',
+              src: 'https://placehold.co/512x512.png',
               sizes: '512x512',
-              type: 'image/svg+xml',
+              type: 'image/png',
               purpose: 'any maskable'
             }
           ]
