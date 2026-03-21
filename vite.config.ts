@@ -23,15 +23,15 @@ export default defineConfig(({mode}) => {
           start_url: '/',
           icons: [
             {
-              src: 'https://cdn.vectorstock.com/i/500p/98/75/shw-logo-design-template-with-strong-and-modern-vector-50999875.jpg',
+              src: '/icon-192.svg',
               sizes: '192x192',
-              type: 'image/jpeg',
+              type: 'image/svg+xml',
               purpose: 'any maskable'
             },
             {
-              src: 'https://cdn.vectorstock.com/i/500p/98/75/shw-logo-design-template-with-strong-and-modern-vector-50999875.jpg',
+              src: '/icon-512.svg',
               sizes: '512x512',
-              type: 'image/jpeg',
+              type: 'image/svg+xml',
               purpose: 'any maskable'
             }
           ]
