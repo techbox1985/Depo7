@@ -1,6 +1,7 @@
 import React from 'react';
 import { Menu, Bell, User, LogOut } from 'lucide-react';
 import { supabase } from '../../services/supabaseClient';
+import { OnlineStatusIndicator } from '../OnlineStatusIndicator';
 
 export const Header: React.FC = () => {
   const handleLogout = async () => {
@@ -14,6 +15,7 @@ export const Header: React.FC = () => {
           <Menu className="h-6 w-6 text-gray-500" />
         </button>
         <h1 className="text-xl font-bold text-gray-900">Punto de Venta</h1>
+        <OnlineStatusIndicator />
       </div>
       <div className="flex items-center space-x-4">
         <button className="text-gray-500 hover:text-gray-700">

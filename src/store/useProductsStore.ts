@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Product } from '../types';
 import { productsService } from '../services/productsService';
+import { dbService, STORES } from '../services/db';
 
 interface ProductsState {
   products: Product[];
@@ -26,9 +27,15 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     set({ isLoading: true, error: null, hasMore: true });
     try {
       const products = await productsService.getProductsPaginated(0, LIMIT);
+      await dbService.setAll(STORES.PRODUCTS, products);
       set({ products, isLoading: false, hasMore: products.length === LIMIT });
     } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+      const cachedProducts = await dbService.getAll<Product>(STORES.PRODUCTS);
+      if (cachedProducts.length > 0) {
+        set({ products: cachedProducts, isLoading: false, hasMore: false });
+      } else {
+        set({ error: error.message, isLoading: false });
+      }
     }
   },
   fetchMoreProducts: async () => {
@@ -38,6 +45,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     set({ isLoadingMore: true, error: null });
     try {
       const newProducts = await productsService.getProductsPaginated(products.length, LIMIT);
+      await dbService.setAll(STORES.PRODUCTS, [...products, ...newProducts]);
       set({ 
         products: [...products, ...newProducts], 
         isLoadingMore: false,
@@ -51,7 +59,9 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const newProduct = await productsService.addProduct(product);
-      set((state) => ({ products: [newProduct, ...state.products], isLoading: false }));
+      const updatedProducts = [newProduct, ...get().products];
+      await dbService.setAll(STORES.PRODUCTS, updatedProducts);
+      set({ products: updatedProducts, isLoading: false });
       return newProduct;
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
@@ -62,10 +72,12 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const updatedProduct = await productsService.updateProduct(id, updates);
-      set((state) => ({
-        products: state.products.map((p) => (p.id === id ? updatedProduct : p)),
+      const updatedProducts = get().products.map((p) => (p.id === id ? updatedProduct : p));
+      await dbService.setAll(STORES.PRODUCTS, updatedProducts);
+      set({
+        products: updatedProducts,
         isLoading: false,
-      }));
+      });
       return updatedProduct;
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
