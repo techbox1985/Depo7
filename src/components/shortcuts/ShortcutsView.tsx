@@ -31,7 +31,7 @@ export const ShortcutsView: React.FC = () => {
             <li className="flex justify-between"><span className="font-medium">Enter</span> <span>Confirmar / agregar</span></li>
             <li className="flex justify-between"><span className="font-medium">+ / -</span> <span>Cambiar cantidad</span></li>
             <li className="flex justify-between"><span className="font-medium">Delete</span> <span>Eliminar ítem</span></li>
-            <li className="flex justify-between"><span className="font-medium">F2</span> <span>Cobrar</span></li>
+            <li className="flex justify-between"><span className="font-medium text-indigo-600">F2</span> <span>Cobrar (Activo)</span></li>
           </ul>
         </section>
 

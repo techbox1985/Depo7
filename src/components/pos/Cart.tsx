@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useCart } from '../../hooks/useCart';
 import { useCashStore } from '../../store/useCashStore';
 import { CartItem } from './CartItem';
@@ -397,6 +397,19 @@ export const Cart: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalStatus, setModalStatus] = useState<ModalStatus>('completada');
   const [postActionData, setPostActionData] = useState<PostActionData | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F2') {
+        e.preventDefault();
+        if (items.length > 0 && !isProcessing) {
+          handleOpenModal('completada');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [items, isProcessing]);
 
   useMemo<CartSnapshotItem[]>(
     () =>
