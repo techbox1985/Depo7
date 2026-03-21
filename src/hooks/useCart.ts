@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useCartStore } from '../store/useCartStore';
 import { usePromotionsStore } from '../store/usePromotionsStore';
+import { useOfflineSalesStore } from '../store/useOfflineSalesStore';
 import { Product } from '../types';
 import { supabase } from '../services/supabaseClient';
 import { getBasePrice, getEffectivePrice } from '../utils/priceUtils';
@@ -20,6 +21,7 @@ const toLineDiscountType = (value: unknown): 'none' | 'percent' | 'amount' => {
 export const useCart = () => {
   const cartStore = useCartStore();
   const { promotions } = usePromotionsStore();
+  const offlineSalesStore = useOfflineSalesStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -130,6 +132,13 @@ export const useCart = () => {
         return payload;
       } else {
         const payload = { p_total: calculatedTotal, p_cliente_id: customerId || null, p_estado: status, p_items: itemsPayload, p_metodo_pago: options?.paymentMethod || 'efectivo', p_tipo_digital: options?.digitalType || null, p_cuotas: options?.installments || 1, p_monto_efectivo: options?.amountCash || 0, p_monto_digital: options?.amountDigital || 0, p_tipo_descuento: options?.discountType || 'ninguno', p_valor_descuento: options?.discountValue || 0, p_price_list: options?.priceList && options.priceList !== 'carrito' ? options.priceList : null, p_caja_id: cashClosingId || null };
+        
+        if (!navigator.onLine) {
+          await offlineSalesStore.addSale(payload);
+          cartStore.clearCart();
+          return payload;
+        }
+
         const { data: rpcData, error: rpcError } = await supabase.rpc('create_sale_with_status', payload);
         if (rpcError) throw rpcError;
         if (cashClosingId && rpcData?.id) await supabase.from('sales').update({ caja_id: cashClosingId }).eq('id', rpcData.id);

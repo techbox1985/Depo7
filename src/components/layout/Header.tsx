@@ -1,9 +1,11 @@
 import React from 'react';
-import { Menu, Bell, User, LogOut } from 'lucide-react';
+import { Menu, Bell, User, LogOut, Wifi, WifiOff, ShoppingCart } from 'lucide-react';
 import { supabase } from '../../services/supabaseClient';
 import { OnlineStatusIndicator } from '../OnlineStatusIndicator';
+import { useOfflineSalesStore } from '../../store/useOfflineSalesStore';
 
 export const Header: React.FC = () => {
+  const { pendingSales } = useOfflineSalesStore();
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
@@ -16,6 +18,12 @@ export const Header: React.FC = () => {
         </button>
         <h1 className="text-xl font-bold text-gray-900">Punto de Venta</h1>
         <OnlineStatusIndicator />
+        {pendingSales.length > 0 && (
+          <div className="ml-4 flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
+            <ShoppingCart className="h-3 w-3" />
+            Ventas pendientes: {pendingSales.length}
+          </div>
+        )}
       </div>
       <div className="flex items-center space-x-4">
         <button className="text-gray-500 hover:text-gray-700">

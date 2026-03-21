@@ -1,11 +1,12 @@
 import { openDB, IDBPDatabase } from 'idb';
 
 const DB_NAME = 'shw-pos-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export const STORES = {
   PRODUCTS: 'products',
   CONFIG: 'config',
+  OFFLINE_SALES: 'offlineSales',
 };
 
 let dbPromise: Promise<IDBPDatabase>;
@@ -13,9 +14,14 @@ let dbPromise: Promise<IDBPDatabase>;
 export const initDB = () => {
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        db.createObjectStore(STORES.PRODUCTS, { keyPath: 'id' });
-        db.createObjectStore(STORES.CONFIG, { keyPath: 'key' });
+      upgrade(db, oldVersion) {
+        if (oldVersion < 1) {
+          db.createObjectStore(STORES.PRODUCTS, { keyPath: 'id' });
+          db.createObjectStore(STORES.CONFIG, { keyPath: 'key' });
+        }
+        if (oldVersion < 2) {
+          db.createObjectStore(STORES.OFFLINE_SALES, { keyPath: 'id', autoIncrement: true });
+        }
       },
     });
   }
