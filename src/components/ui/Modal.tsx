@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { useKeyboardContext } from '../../context/KeyboardContext';
 
 interface ModalProps {
   isOpen: boolean;
@@ -9,21 +10,25 @@ interface ModalProps {
 }
 
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
+  const { setActiveContext, setModalOnClose } = useKeyboardContext();
 
+  useEffect(() => {
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
+      setActiveContext('modal');
+      setModalOnClose(onClose);
       document.body.style.overflow = 'hidden';
+    } else {
+      setActiveContext('default');
+      setModalOnClose(null);
+      document.body.style.overflow = 'unset';
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
+      setActiveContext('default');
+      setModalOnClose(null);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, setActiveContext, setModalOnClose, onClose]);
 
   if (!isOpen) return null;
 
