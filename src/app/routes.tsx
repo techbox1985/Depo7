@@ -189,6 +189,7 @@ const DashboardHome = () => {
 const AppLayout = () => {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -217,10 +218,29 @@ const AppLayout = () => {
 
   return (
     <div className="flex h-screen flex-col bg-gray-50 overflow-hidden">
-      <Header />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
-        <main className="flex-1 overflow-y-auto relative">
+      <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Mobile Overlay */}
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-gray-600 bg-opacity-75 z-20 lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+        
+        {/* Sidebar */}
+        <div className={`
+          fixed inset-y-0 left-0 z-30 w-64 bg-white transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}>
+          <div className="flex items-center justify-between p-4 lg:hidden">
+            <span className="font-bold">Menú</span>
+            <button onClick={() => setIsSidebarOpen(false)} className="text-gray-500">X</button>
+          </div>
+          <Sidebar />
+        </div>
+        
+        <main className="flex-1 overflow-y-auto relative z-10">
           <Outlet />
         </main>
       </div>
