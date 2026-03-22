@@ -9,6 +9,7 @@ interface PromotionsState {
   fetchPromotions: () => Promise<void>;
   addPromotion: (promotion: Omit<Promotion, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   updatePromotion: (id: string, updates: Partial<Promotion>) => Promise<void>;
+  deletePromotion: (id: string) => Promise<void>;
 }
 
 export const usePromotionsStore = create<PromotionsState>((set) => ({
@@ -43,6 +44,20 @@ export const usePromotionsStore = create<PromotionsState>((set) => ({
       }));
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
+    }
+  },
+  deletePromotion: async (id) => {
+    console.log("STORE DELETE PROMO", id);
+    set({ isLoading: true, error: null });
+    try {
+      await promotionsService.deletePromotion(id);
+      set((state) => ({
+        promotions: state.promotions.filter((p) => p.id !== id),
+        isLoading: false,
+      }));
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+      throw error;
     }
   },
 }));

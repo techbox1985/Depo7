@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
@@ -313,12 +313,16 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
       }
     };
 
+    const handleClose = useCallback(() => {
+      onClose();
+    }, [onClose]);
+
     const imageUrl = String(formData.image_url || '').trim();
 
     return (
       <Modal
         isOpen={isOpen}
-        onClose={onClose}
+        onClose={handleClose}
         title={product ? 'Editar Producto' : 'Agregar Producto'}
       >
         <div className="max-h-[85vh]">

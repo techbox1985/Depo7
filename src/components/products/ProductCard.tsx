@@ -1,12 +1,13 @@
-import React, { useMemo, useState } from 'react';
-import { Product } from '../../types';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Product, PriceList } from '../../types';
 import { useCart } from '../../hooks/useCart';
 import { Button } from '../ui/Button';
 import { Plus, AlertCircle, History } from 'lucide-react';
-import { getEffectivePrice, getBasePrice } from '../../utils/priceUtils';
+import { getEffectivePrice, getBasePrice, getActivePromotion } from '../../utils/priceUtils';
 import { usePromotions } from '../../hooks/usePromotions';
 import { formatMoney } from '../../utils/money';
 import { getFractionalLabel } from '../../utils/stockUtils';
+import { priceListsService } from '../../services/priceListsService';
 
 interface ProductCardProps {
   product: Product;
@@ -17,10 +18,16 @@ const SHW_LOGO_URL =
   'https://cdn.vectorstock.com/i/500p/98/75/shw-logo-design-template-with-strong-and-modern-vector-50999875.jpg';
 
 export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onViewHistory }) => {
+  console.log('ProductCard - product:', product);
   const { addItem } = useCart();
   const { promotions } = usePromotions();
-  const [selectedPriceType, setSelectedPriceType] = useState<'minorista' | 'mayorista'>('minorista');
+  const [priceLists, setPriceLists] = useState<PriceList[]>([]);
+  const [selectedPriceListCode, setSelectedPriceListCode] = useState<string>('lista_1');
   const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    priceListsService.getPriceLists().then(setPriceLists).catch(console.error);
+  }, []);
 
   const imageUrl = useMemo(() => {
     const raw = String(product.image_url || '').trim();
@@ -29,8 +36,15 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, on
 
   const showPlaceholder = !imageUrl || imageError;
 
-  const basePrice = getBasePrice(product, selectedPriceType);
-  const effectivePrice = getEffectivePrice(product, selectedPriceType, promotions);
+  const basePrice = getBasePrice(product, selectedPriceListCode as any);
+  const effectivePrice = getEffectivePrice(product, selectedPriceListCode as any, promotions);
+  const activePromo = getActivePromotion(product, promotions);
+  
+  // Debug
+  if (!product.product_prices || product.product_prices.length === 0) {
+    console.error('ProductCard - product_prices missing for product:', product.id, product.name);
+  }
+
   const hasDiscount = effectivePrice < (basePrice || 0);
   const isOutOfStock = Number(product.stock || 0) <= 0;
   const isInactive = product.estado === 'inactivo' || product.estado === 'inactive';
@@ -39,7 +53,7 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, on
 
   const handleAddToCart = () => {
     if (!isOutOfStock && !isInactive) {
-      addItem(product, selectedPriceType, 1);
+      addItem(product, selectedPriceListCode as any, 1);
     }
   };
 
@@ -56,6 +70,11 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, on
       )}
 
       <div className="relative h-48 w-full overflow-hidden bg-gray-100">
+        {activePromo && (
+          <div className="absolute top-2 left-2 z-10 rounded-md bg-indigo-600 px-2 py-1 text-xs font-bold text-white shadow-sm">
+            PROMO -{activePromo.discount_percentage}%
+          </div>
+        )}
         {showPlaceholder ? (
           <div className={`flex h-full w-full items-center justify-center bg-white p-6 ${isOutOfStock ? 'grayscale opacity-60' : ''}`}>
             <img
@@ -126,13 +145,16 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, on
 
         <div className="mt-auto">
           <select
-            value={selectedPriceType}
-            onChange={(e) => setSelectedPriceType(e.target.value as 'minorista' | 'mayorista')}
+            value={selectedPriceListCode}
+            onChange={(e) => setSelectedPriceListCode(e.target.value)}
             className="mb-3 block w-full rounded-md border-gray-300 bg-white py-1.5 pl-3 pr-10 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
             disabled={isOutOfStock || isInactive}
           >
-            <option value="minorista">Minorista</option>
-            <option value="mayorista">Mayorista</option>
+            {priceLists.map((list) => (
+              <option key={list.id} value={list.code}>
+                {list.name}
+              </option>
+            ))}
           </select>
 
           <div className="flex items-center justify-between">

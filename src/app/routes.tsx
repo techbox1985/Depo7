@@ -51,7 +51,7 @@ const DashboardHome = () => {
         const [salesRes, promotionsRes, productsRes] = await Promise.all([
           supabase.from('sales').select('*'),
           supabase.from('promotions').select('*'),
-          supabase.from('products').select('*'),
+          supabase.from('products').select('*, product_prices(*, price_lists(*))'),
         ]);
 
         if (salesRes.error) {

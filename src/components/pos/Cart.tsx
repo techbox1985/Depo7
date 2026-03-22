@@ -20,13 +20,15 @@ import { formatMoney } from '../../utils/money';
 
 type ModalStatus = string;
 type SaleDiscountType = 'ninguno' | 'porcentaje' | 'fijo';
-type GlobalPriceList = 'minorista' | 'mayorista' | 'carrito';
+type GlobalPriceList = 'lista_1' | 'lista_2' | 'lista_3';
 
 export type CartSnapshotItem = {
   productId: string;
   productName: string;
   quantity: number;
   unitPrice: number;
+  originalUnitPrice: number;
+  discountAmount: number;
   subtotal: number;
 };
 
@@ -98,17 +100,34 @@ export const buildPrintHtml = (data: PostActionData) => {
   const title = getDocumentTitle(data.status);
 
   const rows = data.items
-    .map(
-      (item) => `
+    .map((item) => {
+      console.log("TICKET ITEM RAW", item);
+      console.log("TICKET ITEM DEBUG", {
+        productName: item.productName,
+        quantity: item.quantity,
+        originalUnitPrice: item.originalUnitPrice,
+        finalUnitPrice: item.unitPrice,
+        lineDiscountAmount: (item.originalUnitPrice - item.unitPrice) * item.quantity,
+        expectedLineSubtotal: item.unitPrice * item.quantity
+      });
+      return `
         <tr>
           <td>${item.productName}</td>
           <td style="text-align:center;">${item.quantity}</td>
+          <td style="text-align:right;">${formatMoney(item.originalUnitPrice)}</td>
           <td style="text-align:right;">${formatMoney(item.unitPrice)}</td>
+          ${item.discountAmount > 0 ? `<td style="text-align:right; color:green;">-${formatMoney(item.discountAmount)}</td>` : '<td style="text-align:right;">-</td>'}
           <td style="text-align:right;">${formatMoney(item.subtotal)}</td>
         </tr>
-      `
-    )
+      `;
+    })
     .join('');
+
+  console.log("TICKET TOTALS DEBUG", {
+    totalOriginal: data.subtotal,
+    totalDiscount: data.subtotal - data.total,
+    totalFinal: data.total
+  });
 
   const compact = data.status === 'completada';
 
@@ -222,7 +241,9 @@ export const buildPrintHtml = (data: PostActionData) => {
               <tr>
                 <th>Producto</th>
                 <th style="text-align:center;">Cant.</th>
-                <th style="text-align:right;">Unitario</th>
+                <th style="text-align:right;">Original</th>
+                <th style="text-align:right;">Final</th>
+                <th style="text-align:right;">Desc.</th>
                 <th style="text-align:right;">Subtotal</th>
               </tr>
             </thead>
@@ -235,6 +256,10 @@ export const buildPrintHtml = (data: PostActionData) => {
             <div class="total-row">
               <span>Subtotal</span>
               <span>${formatMoney(data.subtotal)}</span>
+            </div>
+            <div class="total-row">
+              <span>Descuento Total</span>
+              <span style="color:green;">-${formatMoney(data.subtotal - data.total)}</span>
             </div>
             <div class="total-row total-final">
               <span>Total</span>
@@ -380,6 +405,7 @@ export const Cart: React.FC = () => {
   const {
     items,
     subtotal,
+    totalDiscount,
     total,
     globalPriceList,
     setGlobalPriceList,
@@ -387,6 +413,8 @@ export const Cart: React.FC = () => {
     checkout,
     isProcessing,
     error,
+    updateQuantity,
+    removeItem,
   } = useCart();
 
   const { currentSession } = useCashStore();
@@ -397,6 +425,15 @@ export const Cart: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalStatus, setModalStatus] = useState<ModalStatus>('completada');
   const [postActionData, setPostActionData] = useState<PostActionData | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (items.length === 0) {
+      setSelectedItemId(null);
+    } else if (!selectedItemId || !items.find(i => i.product.id === selectedItemId)) {
+      setSelectedItemId(items[0].product.id);
+    }
+  }, [items, selectedItemId]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -405,23 +442,30 @@ export const Cart: React.FC = () => {
         if (items.length > 0 && !isProcessing) {
           handleOpenModal('completada');
         }
+      } else if (e.key === 'Escape') {
+        if (isModalOpen) {
+          e.preventDefault();
+          setIsModalOpen(false);
+        }
+      } else if (selectedItemId) {
+        const item = items.find(i => i.product.id === selectedItemId);
+        if (!item) return;
+
+        if (e.key === '+') {
+          e.preventDefault();
+          updateQuantity(item.product.id, item.quantity + 1);
+        } else if (e.key === '-') {
+          e.preventDefault();
+          if (item.quantity > 1) updateQuantity(item.product.id, item.quantity - 1);
+        } else if (e.key === 'Delete') {
+          e.preventDefault();
+          removeItem(item.product.id);
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [items, isProcessing]);
-
-  useMemo<CartSnapshotItem[]>(
-    () =>
-      items.map((item) => ({
-        productId: item.product.id,
-        productName: item.product.name,
-        quantity: item.quantity,
-        unitPrice: Math.round(Number((item.subtotal / item.quantity) || 0)),
-        subtotal: Math.round(Number(item.subtotal || 0)),
-      })),
-    [items]
-  );
+  }, [items, isProcessing, isModalOpen, selectedItemId, updateQuantity, removeItem]);
 
   const handleOpenModal = (status: ModalStatus) => {
     if (!currentSession) {
@@ -460,21 +504,32 @@ export const Cart: React.FC = () => {
       };
 
       if (checkoutPayload) {
+        const correctedItems = checkoutPayload.p_items.map((item: any) => {
+          const originalUnitPrice = Number(item.original_price || item.price || 0);
+          const finalUnitPrice = Number(item.price || 0);
+          const quantity = Number(item.quantity || 0);
+          const lineDiscountAmount = (originalUnitPrice - finalUnitPrice) * quantity;
+          const subtotal = finalUnitPrice * quantity;
+          return {
+            productId: item.product_id,
+            productName: item.product_name,
+            quantity: quantity,
+            unitPrice: finalUnitPrice,
+            originalUnitPrice: originalUnitPrice,
+            discountAmount: lineDiscountAmount,
+            subtotal: subtotal,
+          };
+        });
+        
+        const subtotal = correctedItems.reduce((acc, item) => acc + (item.originalUnitPrice * item.quantity), 0);
+        const total = correctedItems.reduce((acc, item) => acc + item.subtotal, 0);
+
         const snapshotAfterCheckout: PostActionData = {
           status: modalStatus,
           customerId,
-          items: checkoutPayload.p_items.map((item: any) => ({
-            productId: item.product_id,
-            productName: item.product_name,
-            quantity: item.quantity,
-            unitPrice: item.price,
-            subtotal: item.price * item.quantity,
-          })),
-          subtotal: checkoutPayload.p_items.reduce(
-            (acc: number, item: any) => acc + item.price * item.quantity,
-            0
-          ),
-          total: checkoutPayload.p_total,
+          items: correctedItems,
+          subtotal: subtotal,
+          total: total,
           createdAt: new Date().toISOString(),
         };
         setPostActionData(snapshotAfterCheckout);
@@ -524,9 +579,9 @@ export const Cart: React.FC = () => {
                   onChange={(e) => setGlobalPriceList(e.target.value as GlobalPriceList)}
                   className="block w-full border-none bg-transparent py-1 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 >
-                  <option value="carrito">Lista por defecto (Carrito)</option>
-                  <option value="minorista">Forzar Minorista</option>
-                  <option value="mayorista">Forzar Mayorista</option>
+                  <option value="lista_1">Lista 1</option>
+                  <option value="lista_2">Lista 2</option>
+                  <option value="lista_3">Lista 3</option>
                 </select>
               </div>
 
@@ -534,7 +589,12 @@ export const Cart: React.FC = () => {
                 <div className="flow-root">
                   <ul role="list" className="-my-6 divide-y divide-gray-200">
                     {items.map((item) => (
-                      <CartItem key={`${item.product.id}-${item.priceType}`} item={item} />
+                      <CartItem
+                        key={`${item.product.id}-${item.priceType}`}
+                        item={item}
+                        isSelected={selectedItemId === item.product.id}
+                        onSelect={() => setSelectedItemId(item.product.id)}
+                      />
                     ))}
                   </ul>
                 </div>
@@ -559,6 +619,13 @@ export const Cart: React.FC = () => {
                 <p>Subtotal</p>
                 <p>{formatMoney(subtotal)}</p>
               </div>
+
+              {totalDiscount > 0 && (
+                <div className="mb-2 flex justify-between text-base font-medium text-green-600">
+                  <p>Descuento</p>
+                  <p>-{formatMoney(totalDiscount)}</p>
+                </div>
+              )}
 
               <div className="mb-6 flex justify-between text-lg font-bold text-gray-900">
                 <p>Total</p>

@@ -5,7 +5,7 @@ import { offlineDb } from './offlineDb';
 export const productsService = {
   async getProducts(): Promise<Product[]> {
     try {
-      const { data, error } = await supabase.from('products').select('*, product_prices(*, price_list:price_lists(*))');
+      const { data, error } = await supabase.from('products').select('*, product_prices(*, price_lists(*))');
       if (error) throw error;
       if (data) await offlineDb.saveProducts(data);
       return data || [];
@@ -18,7 +18,7 @@ export const productsService = {
   async getProductsPaginated(offset: number, limit: number): Promise<Product[]> {
     const { data, error } = await supabase
       .from('products')
-      .select('*, product_prices(*, price_list:price_lists(*))')
+      .select('*, product_prices(*, price_lists(*))')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
       

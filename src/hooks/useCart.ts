@@ -7,7 +7,7 @@ import { supabase } from '../services/supabaseClient';
 import { getBasePrice, getEffectivePrice } from '../utils/priceUtils';
 import { roundMoney } from '../utils/money';
 
-type PriceListType = 'minorista' | 'mayorista' | 'carrito';
+type PriceListType = 'lista_1' | 'lista_2' | 'lista_3';
 type SaleDiscountType = 'ninguno' | 'porcentaje' | 'fijo';
 
 const isValidUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -25,7 +25,7 @@ export const useCart = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const addItem = (product: Product, priceType: 'minorista' | 'mayorista', quantity: number = 1) => cartStore.addItem(product, priceType, quantity, promotions);
+  const addItem = (product: Product, priceType: 'lista_1' | 'lista_2' | 'lista_3', quantity: number = 1) => cartStore.addItem(product, priceType, quantity, promotions);
   const updateQuantity = (productId: string, quantity: number) => cartStore.updateQuantity(productId, quantity, promotions);
   const setGlobalPriceList = (priceList: PriceListType) => cartStore.setGlobalPriceList(priceList, promotions);
   const updateItemDiscount = (productId: string, discountType: any, discountValue: number) => cartStore.updateItemDiscount(productId, discountType, discountValue, promotions);
@@ -41,9 +41,9 @@ export const useCart = () => {
     try {
       let calculatedTotal = 0;
       const itemsPayload = cartStore.items.map((item) => {
-        const effectivePriceList = options?.priceList && options.priceList !== 'carrito' ? options.priceList : item.priceType;
-        const basePrice = getEffectivePrice(item.product, effectivePriceList as 'minorista' | 'mayorista', promotions);
-        const originalPrice = getBasePrice(item.product, effectivePriceList as 'minorista' | 'mayorista');
+        const effectivePriceList = options?.priceList || item.priceType;
+        const basePrice = getEffectivePrice(item.product, effectivePriceList as 'lista_1' | 'lista_2' | 'lista_3', promotions);
+        const originalPrice = getBasePrice(item.product, effectivePriceList as 'lista_1' | 'lista_2' | 'lista_3');
         let finalItemPrice = basePrice;
         let itemDiscountAmount = 0;
         const normalizedDiscountType = toLineDiscountType(item.discountType);
@@ -76,7 +76,7 @@ export const useCart = () => {
           price_list: effectivePriceList, 
           discount_type: normalizedDiscountType, 
           discount_value: safeDiscountValue, 
-          discount_amount: itemDiscountAmount 
+          discount_amount: roundMoney(itemDiscountAmount * item.quantity)
         };
       });
 
@@ -106,7 +106,7 @@ export const useCart = () => {
         }
 
         // 2. Actualizar venta y items vía RPC
-        const finalPriceList = (options?.priceList && options.priceList !== 'carrito' ? options.priceList : cartStore.originalPriceList) || 'minorista';
+        const finalPriceList = (options?.priceList || cartStore.originalPriceList) || 'lista_1';
         
         const payload = {
           p_sale_id: cartStore.editingSaleId,
@@ -132,7 +132,7 @@ export const useCart = () => {
         cartStore.clearCart();
         return payload;
       } else {
-        const payload = { p_total: calculatedTotal, p_cliente_id: customerId || null, p_estado: status, p_items: itemsPayload, p_metodo_pago: options?.paymentMethod || 'efectivo', p_tipo_digital: options?.digitalType || null, p_cuotas: options?.installments || 1, p_monto_efectivo: options?.amountCash || 0, p_monto_digital: options?.amountDigital || 0, p_tipo_descuento: options?.discountType || 'ninguno', p_valor_descuento: options?.discountValue || 0, p_price_list: options?.priceList && options.priceList !== 'carrito' ? options.priceList : null, p_caja_id: cashClosingId || null };
+        const payload = { p_total: calculatedTotal, p_cliente_id: customerId || null, p_estado: status, p_items: itemsPayload, p_metodo_pago: options?.paymentMethod || 'efectivo', p_tipo_digital: options?.digitalType || null, p_cuotas: options?.installments || 1, p_monto_efectivo: options?.amountCash || 0, p_monto_digital: options?.amountDigital || 0, p_tipo_descuento: options?.discountType || 'ninguno', p_valor_descuento: options?.discountValue || 0, p_price_list: options?.priceList || null, p_caja_id: cashClosingId || null };
         
         if (!navigator.onLine) {
           await offlineSalesStore.addSale(payload);
@@ -155,5 +155,5 @@ export const useCart = () => {
     }
   };
 
-  return { items: cartStore.items, subtotal: cartStore.subtotal, total: cartStore.total, globalPriceList: cartStore.globalPriceList, setGlobalPriceList, updateItemDiscount, addItem, removeItem: cartStore.removeItem, updateQuantity, clearCart: cartStore.clearCart, checkout, isProcessing, error };
+  return { items: cartStore.items, subtotal: cartStore.subtotal, totalDiscount: cartStore.totalDiscount, total: cartStore.total, globalPriceList: cartStore.globalPriceList, setGlobalPriceList, updateItemDiscount, addItem, removeItem: cartStore.removeItem, updateQuantity, clearCart: cartStore.clearCart, checkout, isProcessing, error };
 };

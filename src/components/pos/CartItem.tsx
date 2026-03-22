@@ -5,6 +5,8 @@ import { Minus, Plus, Trash2, Tag, X } from 'lucide-react';
 
 interface CartItemProps {
   item: CartItemType;
+  isSelected: boolean;
+  onSelect: () => void;
 }
 
 const SHW_LOGO_URL =
@@ -16,7 +18,7 @@ const normalizeDiscountType = (value?: string) => {
   return 'none';
 };
 
-export const CartItem: React.FC<CartItemProps> = ({ item }) => {
+export const CartItem: React.FC<CartItemProps> = ({ item, isSelected, onSelect }) => {
   const { updateQuantity, removeItem, updateItemDiscount } = useCart();
   const [showDiscount, setShowDiscount] = useState(false);
   const [discountInput, setDiscountInput] = useState(item.discountValue?.toString() || '');
@@ -102,7 +104,7 @@ export const CartItem: React.FC<CartItemProps> = ({ item }) => {
   };
 
   return (
-    <li className="flex flex-col py-4">
+    <li className={`flex flex-col py-4 px-2 rounded-lg cursor-pointer transition-all ${isSelected ? 'ring-2 ring-indigo-500 bg-indigo-50' : 'hover:bg-gray-50'}`} onClick={onSelect}>
       <div className="flex">
         <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border border-gray-200 bg-white">
           {showPlaceholder ? (
@@ -133,20 +135,19 @@ export const CartItem: React.FC<CartItemProps> = ({ item }) => {
               <h3 className="line-clamp-1">{item.product.name}</h3>
               <div className="text-right">
                 {hasDiscount && (
-                  <p className="text-xs text-gray-400 line-through">${originalLineTotal}</p>
+                  <p className="text-xs text-gray-400 line-through">${item.originalPrice * item.quantity}</p>
                 )}
                 <p className="ml-4">${item.subtotal}</p>
               </div>
             </div>
 
             <p className="mt-1 text-xs text-gray-500">
-              {item.priceType === 'minorista' ? 'Minorista' : 'Mayorista'} • ${item.price} / c/u
+              {item.priceType === 'minorista' ? 'Minorista' : 'Mayorista'} • Precio orig: ${item.originalPrice} • Final: ${item.price} / c/u
             </p>
 
             {hasDiscount && (
-              <p className="mt-0.5 text-xs text-green-600">
-                Descuento:{' '}
-                {normalizedDiscountType === 'percent'
+              <p className="mt-0.5 text-xs text-green-600 font-bold">
+                Ahorro: {normalizedDiscountType === 'percent'
                   ? `${item.discountValue}%`
                   : `$${Math.round(Number(item.discountValue || 0))}`}
               </p>

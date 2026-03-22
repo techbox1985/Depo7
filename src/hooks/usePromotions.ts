@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { usePromotionsStore } from '../store/usePromotionsStore';
 
 export const usePromotions = () => {
-  const { promotions, isLoading, error, fetchPromotions, addPromotion, updatePromotion } = usePromotionsStore();
+  const { promotions, isLoading, error, fetchPromotions, addPromotion, updatePromotion, deletePromotion } = usePromotionsStore();
 
   useEffect(() => {
     fetchPromotions();
@@ -14,6 +14,7 @@ export const usePromotions = () => {
     error,
     addPromotion,
     updatePromotion,
+    deletePromotion,
     refreshPromotions: fetchPromotions,
   };
 };

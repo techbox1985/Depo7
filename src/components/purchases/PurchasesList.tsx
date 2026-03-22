@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../services/supabaseClient';
 import { Purchase } from '../../types';
 import { Spinner } from '../ui/Spinner';
@@ -47,6 +47,8 @@ export const PurchasesList: React.FC = () => {
   const handleNewPurchase = () => {
     setIsPurchaseModalOpen(true);
   };
+
+  const handlePurchaseModalClose = useCallback(() => setIsPurchaseModalOpen(false), []);
 
   const handlePurchaseSuccess = () => {
     fetchPurchases();
@@ -141,7 +143,7 @@ export const PurchasesList: React.FC = () => {
       {isPurchaseModalOpen && (
         <PurchaseFormModal
           isOpen={isPurchaseModalOpen}
-          onClose={() => setIsPurchaseModalOpen(false)}
+          onClose={handlePurchaseModalClose}
           onSuccess={handlePurchaseSuccess}
         />
       )}

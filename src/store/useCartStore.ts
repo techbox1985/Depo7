@@ -3,20 +3,21 @@ import { CartItem, Product, Promotion } from '../types';
 import { getEffectivePrice, getBasePrice } from '../utils/priceUtils';
 import { roundMoney } from '../utils/money';
 
-type CartPriceList = 'minorista' | 'mayorista' | 'carrito';
+type CartPriceList = 'lista_1' | 'lista_2' | 'lista_3';
 type CartDiscountType = 'none' | 'percent' | 'amount' | 'ninguno' | 'porcentaje' | 'fijo';
 
 interface CartState {
   items: CartItem[];
   globalPriceList: CartPriceList;
   setGlobalPriceList: (priceList: CartPriceList, promotions: Promotion[]) => void;
-  addItem: (product: Product, priceType: 'minorista' | 'mayorista', quantity: number, promotions: Promotion[]) => void;
+  addItem: (product: Product, priceType: 'lista_1' | 'lista_2' | 'lista_3', quantity: number, promotions: Promotion[]) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number, promotions: Promotion[]) => void;
   updateItemDiscount: (productId: string, discountType: CartDiscountType, discountValue: number, promotions: Promotion[]) => void;
   clearCart: () => void;
   loadCartFromSale: (items: any[], products: Product[], priceList?: string) => void;
   subtotal: number;
+  totalDiscount: number;
   total: number;
   editingSaleId: string | null;
   originalPriceList: string | null;
@@ -63,14 +64,17 @@ const calculateItemValues = (item: CartItem) => {
 };
 
 const recalculateTotals = (items: CartItem[]) => {
-  const total = roundMoney(items.reduce((acc, item) => acc + Number(item.subtotal || 0), 0));
-  return { subtotal: total, total };
+  const subtotal = roundMoney(items.reduce((acc, item) => acc + Number(item.price * item.quantity || 0), 0));
+  const totalDiscount = roundMoney(items.reduce((acc, item) => acc + Number(item.discountAmount || 0), 0));
+  const total = roundMoney(subtotal - totalDiscount);
+  return { subtotal, totalDiscount, total };
 };
 
 export const useCartStore = create<CartState>((set) => ({
   items: [],
-  globalPriceList: 'carrito',
+  globalPriceList: 'lista_1',
   subtotal: 0,
+  totalDiscount: 0,
   total: 0,
   editingSaleId: null,
   originalPriceList: null,
@@ -81,7 +85,7 @@ export const useCartStore = create<CartState>((set) => ({
   setGlobalPriceList: (priceList, promotions) => {
     set((state) => {
       const newItems = state.items.map((item) => {
-        const effectivePriceType = priceList === 'carrito' ? item.priceType : priceList;
+        const effectivePriceType = priceList;
         const price = roundMoney(getEffectivePrice(item.product, effectivePriceType, promotions));
         const originalPrice = roundMoney(getBasePrice(item.product, effectivePriceType));
         const updatedItem = { ...item, priceType: effectivePriceType, price, originalPrice };
@@ -97,7 +101,7 @@ export const useCartStore = create<CartState>((set) => ({
       const validatedQuantity = validateFractionalQuantity(product, quantity);
       if (validatedQuantity === null) return state;
 
-      const effectivePriceType = state.globalPriceList === 'carrito' ? priceType : state.globalPriceList;
+      const effectivePriceType = state.globalPriceList;
       const existingItemIndex = state.items.findIndex((item) => item.product.id === product.id && item.priceType === effectivePriceType);
       const price = roundMoney(getEffectivePrice(product, effectivePriceType, promotions));
       const originalPrice = roundMoney(getBasePrice(product, effectivePriceType));
@@ -157,7 +161,7 @@ export const useCartStore = create<CartState>((set) => ({
     });
   },
 
-  clearCart: () => set({ items: [], subtotal: 0, total: 0, globalPriceList: 'carrito', editingSaleId: null, originalPriceList: null, originalItems: [] }),
+  clearCart: () => set({ items: [], subtotal: 0, totalDiscount: 0, total: 0, globalPriceList: 'lista_1', editingSaleId: null, originalPriceList: null, originalItems: [] }),
 
   loadCartFromSale: (items, products, priceList) => {
     const mappedItems: CartItem[] = (items || []).map((item: any, index: number) => {
@@ -178,7 +182,7 @@ export const useCartStore = create<CartState>((set) => ({
 
       return {
         product: product || { id: item.product_id || `temp-${index}`, name: item.product_name || 'Producto' } as Product,
-        priceType: (item.price_list === 'mayorista' ? 'mayorista' : 'minorista') as 'minorista' | 'mayorista',
+        priceType: (['lista_1', 'lista_2', 'lista_3'].includes(item.price_list) ? item.price_list : 'lista_1') as 'lista_1' | 'lista_2' | 'lista_3',
         price, originalPrice, quantity,
         subtotal,
         discountType: (item.discount_type || 'none') as CartDiscountType,

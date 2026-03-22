@@ -37,7 +37,7 @@ export const POSView: React.FC = () => {
         if (saleError) throw saleError;
         const { data: items, error: itemsError } = await supabase.from('sale_items').select('*').eq('sale_id', editId);
         if (itemsError) throw itemsError;
-        const { data: products, error: productsError } = await supabase.from('products').select('*');
+        const { data: products, error: productsError } = await supabase.from('products').select('*, product_prices(*, price_lists(*))');
         if (productsError) throw productsError;
 
         clearCart();

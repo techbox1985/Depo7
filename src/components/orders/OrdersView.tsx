@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabaseClient';
 import { Printer, Pencil, Ban } from 'lucide-react';
@@ -59,11 +59,7 @@ export const OrdersView: React.FC = () => {
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
 
-  useEffect(() => {
-    fetchSales();
-  }, []);
-
-  const fetchSales = async () => {
+  const fetchSales = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('sales')
@@ -76,7 +72,11 @@ export const OrdersView: React.FC = () => {
       setSales((data as Sale[]) || []);
     }
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchSales();
+  }, [fetchSales]);
 
   const stats = useMemo(() => {
     const ventas = sales.filter((s) => s.estado === 'completada');
@@ -161,6 +161,8 @@ export const OrdersView: React.FC = () => {
         productName: item.product_name || 'Producto',
         quantity: Number(item.quantity || 0),
         unitPrice: Number(item.price || 0),
+        originalUnitPrice: Number(item.original_price || item.price || 0),
+        discountAmount: Number(item.discount_amount || 0),
         subtotal: Math.round(Number(item.quantity || 0) * Number(item.price || 0)),
       }));
 
@@ -191,6 +193,15 @@ export const OrdersView: React.FC = () => {
     localStorage.setItem('pos_edit_sale_id', sale.id);
     navigate('/pos');
   };
+
+  const handleOrderDetailsModalClose = useCallback(() => {
+    setSelected(null);
+  }, []);
+
+  const handleOrderDetailsActionComplete = useCallback(async () => {
+    setSelected(null);
+    await fetchSales();
+  }, [fetchSales]);
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -347,12 +358,9 @@ export const OrdersView: React.FC = () => {
       {selected && (
         <OrderDetailsModal
           isOpen={!!selected}
-          onClose={() => setSelected(null)}
+          onClose={handleOrderDetailsModalClose}
           order={selected}
-          onActionComplete={async () => {
-            setSelected(null);
-            await fetchSales();
-          }}
+          onActionComplete={handleOrderDetailsActionComplete}
         />
       )}
 

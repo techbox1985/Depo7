@@ -12,13 +12,15 @@ import { ProductHistoryModal } from './ProductHistoryModal';
 import { Product } from '../../types';
 import { formatMoney } from '../../utils/money';
 import { getFractionalLabel } from '../../utils/stockUtils';
-import { getBasePrice } from '../../utils/priceUtils';
+import { getBasePrice, getActivePromotion } from '../../utils/priceUtils';
+import { usePromotions } from '../../hooks/usePromotions';
 
 export const ProductGrid: React.FC = React.memo(() => {
   const location = useLocation();
   const isPOS = location.pathname.includes('/pos');
   
   const { products, isLoading, isLoadingMore, hasMore, error, fetchMoreProducts } = useProducts();
+  const { promotions } = usePromotions();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRubro, setFilterRubro] = useState('');
   const [filterMarca, setFilterMarca] = useState('');
@@ -88,6 +90,11 @@ export const ProductGrid: React.FC = React.memo(() => {
     setHistoryProduct(product);
     setIsHistoryModalOpen(true);
   };
+
+  const handleCloseEditModal = useCallback(() => {
+    setIsEditModalOpen(false);
+    setEditingProduct(null);
+  }, []);
 
   if (isLoading && products.length === 0) {
     return (
@@ -241,8 +248,9 @@ export const ProductGrid: React.FC = React.memo(() => {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rubro / Marca</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Costo</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Min.</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio May.</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lista 1</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lista 2</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lista 3</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                 </tr>
@@ -252,13 +260,14 @@ export const ProductGrid: React.FC = React.memo(() => {
                   const isLast = filteredProducts.length === index + 1;
                   const isInactive = product.estado === 'inactivo' || product.estado === 'inactive';
                   const isOutOfStock = product.stock <= 0;
-                  
-                  const minPrice = getBasePrice(product, 'minorista');
-                  const mayPrice = getBasePrice(product, 'mayorista');
+                  const lista1 = getBasePrice(product, 'lista_1');
+                  const lista2 = getBasePrice(product, 'lista_2');
+                  const lista3 = getBasePrice(product, 'lista_3');
                   const costo = product.costo || 0;
                   
-                  const minMargin = costo > 0 ? ((minPrice - costo) / costo * 100).toFixed(0) : 0;
-                  const mayMargin = costo > 0 ? ((mayPrice - costo) / costo * 100).toFixed(0) : 0;
+                  const margin1 = costo > 0 ? ((lista1 - costo) / costo * 100).toFixed(0) : 0;
+                  const margin2 = costo > 0 ? ((lista2 - costo) / costo * 100).toFixed(0) : 0;
+                  const margin3 = costo > 0 ? ((lista3 - costo) / costo * 100).toFixed(0) : 0;
                   
                   return (
                     <tr 
@@ -280,6 +289,11 @@ export const ProductGrid: React.FC = React.memo(() => {
                             <div className="text-sm font-medium text-gray-900 truncate max-w-[200px]" title={product.name}>
                               {product.name}
                             </div>
+                            {getActivePromotion(product, promotions) && (
+                              <span className="inline-flex items-center rounded-md bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+                                PROMO -{getActivePromotion(product, promotions)?.discount_percentage}%
+                              </span>
+                            )}
                             {getFractionalLabel(product) && (
                               <div className="mt-1">
                                 <span className="inline-flex whitespace-nowrap rounded-full bg-blue-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
@@ -304,12 +318,16 @@ export const ProductGrid: React.FC = React.memo(() => {
                         {formatMoney(costo)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{formatMoney(minPrice)}</div>
-                        <div className="text-xs text-gray-500">{minMargin}% mg</div>
+                        <div className="text-sm text-gray-900">{formatMoney(lista1)}</div>
+                        <div className="text-xs text-gray-500">{margin1}% mg</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{formatMoney(mayPrice)}</div>
-                        <div className="text-xs text-gray-500">{mayMargin}% mg</div>
+                        <div className="text-sm text-gray-900">{formatMoney(lista2)}</div>
+                        <div className="text-xs text-gray-500">{margin2}% mg</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{formatMoney(lista3)}</div>
+                        <div className="text-xs text-gray-500">{margin3}% mg</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${isInactive ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
@@ -364,10 +382,7 @@ export const ProductGrid: React.FC = React.memo(() => {
       {isEditModalOpen && (
         <ProductFormModal
           isOpen={isEditModalOpen}
-          onClose={() => {
-            setIsEditModalOpen(false);
-            setEditingProduct(null);
-          }}
+          onClose={handleCloseEditModal}
           product={editingProduct || undefined}
           onSave={() => {
             productsService.getProductsStats().then(setStats).catch(console.error);

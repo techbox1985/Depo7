@@ -16,7 +16,7 @@ interface CobroModalProps {
     options: {
       discountType: 'ninguno' | 'porcentaje' | 'fijo';
       discountValue: number;
-      priceList: 'minorista' | 'mayorista' | 'carrito';
+      priceList: 'lista_1' | 'lista_2' | 'lista_3';
       paymentMethod: 'efectivo' | 'digital' | 'mixto';
       digitalType?: 'mercadopago' | 'transferencia' | 'tarjeta';
       installments?: number;
@@ -38,7 +38,7 @@ export const CobroModal: React.FC<CobroModalProps> = ({
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(false);
 
   const [customerId, setCustomerId] = useState<string>('');
-  const [priceList, setPriceList] = useState<'minorista' | 'mayorista' | 'carrito'>('carrito');
+  const [priceList, setPriceList] = useState<'lista_1' | 'lista_2' | 'lista_3'>('lista_1');
 
   const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'digital' | 'mixto'>('efectivo');
   const [digitalType, setDigitalType] = useState<'mercadopago' | 'transferencia' | 'tarjeta'>('mercadopago');
@@ -64,7 +64,7 @@ export const CobroModal: React.FC<CobroModalProps> = ({
       .finally(() => setIsLoadingCustomers(false));
 
     setCustomerId('');
-    setPriceList('carrito');
+    setPriceList('lista_1');
     setPaymentMethod('efectivo');
     setDigitalType('mercadopago');
     setInstallments(1);
@@ -79,7 +79,7 @@ export const CobroModal: React.FC<CobroModalProps> = ({
     setCustomerId(newCustomerId);
 
     if (!newCustomerId) {
-      setPriceList('carrito');
+      setPriceList('lista_1');
       return;
     }
 
@@ -88,17 +88,17 @@ export const CobroModal: React.FC<CobroModalProps> = ({
     if (selectedCustomer && selectedCustomer.default_price_list) {
       setPriceList(selectedCustomer.default_price_list as 'minorista' | 'mayorista');
     } else {
-      setPriceList('carrito');
+      setPriceList('lista_1');
     }
   };
 
   const { promotions } = usePromotionsStore();
 
   const baseTotal = useMemo(() => {
-    if (priceList === 'carrito') return Math.round(cartTotal);
+    if (priceList === 'lista_1') return Math.round(cartTotal);
 
     const total = items.reduce((acc, item) => {
-      const baseUnitPrice = getEffectivePrice(item.product, priceList as 'minorista' | 'mayorista', promotions);
+      const baseUnitPrice = getEffectivePrice(item.product, priceList as 'lista_1' | 'lista_2' | 'lista_3', promotions);
 
       let lineDiscountAmount = 0;
       const normalizedType =
@@ -242,15 +242,13 @@ export const CobroModal: React.FC<CobroModalProps> = ({
                   <select
                     value={priceList}
                     onChange={(e) =>
-                      setPriceList(e.target.value as 'minorista' | 'mayorista' | 'carrito')
+                      setPriceList(e.target.value as 'lista_1' | 'lista_2' | 'lista_3')
                     }
                     className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   >
-                    <option value="carrito">
-                      Según carrito ({globalPriceList === 'carrito' ? 'Mixto' : globalPriceList})
-                    </option>
-                    <option value="minorista">Forzar Minorista</option>
-                    <option value="mayorista">Forzar Mayorista</option>
+                    <option value="lista_1">Lista 1</option>
+                    <option value="lista_2">Lista 2</option>
+                    <option value="lista_3">Lista 3</option>
                   </select>
                 </div>
               </div>

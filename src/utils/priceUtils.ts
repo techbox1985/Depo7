@@ -8,13 +8,13 @@ const getSafeNumber = (value: unknown): number => {
 
 export const getBasePrice = (
   product: Product,
-  priceType: 'minorista' | 'mayorista'
+  priceType: 'lista_1' | 'lista_2' | 'lista_3'
 ): number => {
   let basePrice = 0;
 
   if (Array.isArray(product.product_prices) && product.product_prices.length > 0) {
     const productPrice = product.product_prices.find((pp) => {
-      const code = pp?.price_list?.code;
+      const code = pp?.price_lists?.code;
       return code === priceType;
     });
 
@@ -27,19 +27,12 @@ export const getBasePrice = (
     }
   }
 
-  if (basePrice <= 0) {
-    basePrice =
-      priceType === 'mayorista'
-        ? getSafeNumber(product.wholesale_price)
-        : getSafeNumber(product.price);
-  }
-
   return basePrice > 0 ? basePrice : 0;
 };
 
 export const getEffectivePrice = (
   product: Product,
-  priceType: 'minorista' | 'mayorista',
+  priceType: 'lista_1' | 'lista_2' | 'lista_3',
   promotions: Promotion[]
 ): number => {
   const basePrice = getBasePrice(product, priceType);
@@ -65,4 +58,32 @@ export const getEffectivePrice = (
   const effectivePrice = basePrice * (1 - bestDiscountPercentage / 100);
 
   return effectivePrice > 0 ? roundMoney(effectivePrice) : 0;
+};
+
+export const getActivePromotion = (
+  product: Product,
+  promotions: Promotion[]
+): Promotion | null => {
+  let bestPromo: Promotion | null = null;
+  let bestDiscount = 0;
+
+  promotions.forEach((promo) => {
+    const discount = getSafeNumber(promo.discount_percentage);
+    let applies = false;
+
+    if (promo.applies_to === 'global') {
+      applies = true;
+    } else if (promo.applies_to === 'rubro' && promo.target_value === product.rubro) {
+      applies = true;
+    } else if (promo.applies_to === 'producto' && promo.target_value === product.id) {
+      applies = true;
+    }
+
+    if (applies && discount > bestDiscount) {
+      bestDiscount = discount;
+      bestPromo = promo;
+    }
+  });
+
+  return bestPromo;
 };

@@ -21,7 +21,7 @@ export interface ProductPrice {
   exclude_from_mass_update: boolean;
   created_at: string;
   updated_at: string;
-  price_list?: PriceList;
+  price_lists?: PriceList;
 }
 
 export interface Product {
@@ -52,11 +52,18 @@ export interface Promotion {
   id: string;
   name: string;
   discount_percentage: number;
-  applies_to: string;
-  type: string;
+  type: 'percentage' | 'fijo';
+  vigencia_type: 'date' | 'stock';
+  applies_to: 'global' | 'rubro' | 'producto';
+  applies_to_price_list: 'all' | 'lista_1' | 'lista_2' | 'lista_3';
   target_value: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  promo_stock_limit: number | null;
+  promo_stock_sold: number;
   created_at: string;
   updated_at: string;
+  products?: Product[];
 }
 
 export interface Sale {
@@ -97,7 +104,7 @@ export interface SaleItem {
 
 export interface CartItem {
   product: Product;
-  priceType: 'minorista' | 'mayorista';
+  priceType: 'lista_1' | 'lista_2' | 'lista_3';
   price: number;
   originalPrice: number;
   quantity: number;

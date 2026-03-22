@@ -14,12 +14,12 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
 
   useEffect(() => {
     if (isOpen) {
-      setActiveContext('modal');
-      setModalOnClose(onClose);
+      setActiveContext((prev) => prev !== 'modal' ? 'modal' : prev);
+      setModalOnClose((prev) => prev !== onClose ? onClose : prev);
       document.body.style.overflow = 'hidden';
     } else {
-      setActiveContext('default');
-      setModalOnClose(null);
+      setActiveContext((prev) => prev !== 'default' ? 'default' : prev);
+      setModalOnClose((prev) => prev !== null ? null : prev);
       document.body.style.overflow = 'unset';
     }
 

@@ -93,6 +93,8 @@ export const DailySales: React.FC = () => {
         productName: item.product_name || item.products?.name || 'Producto',
         quantity: Number(item.quantity || 0),
         unitPrice: Number(item.price || 0),
+        originalUnitPrice: Number(item.original_price || item.price || 0),
+        discountAmount: Number(item.discount_amount || 0),
         subtotal: Math.round(Number(item.price || 0) * Number(item.quantity || 0)),
       }));
 
