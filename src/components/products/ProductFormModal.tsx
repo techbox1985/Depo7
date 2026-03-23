@@ -547,56 +547,43 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
                         </div>
 
                         <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-3">
-                          <Input
-                            label="Precio Final ($) *"
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={priceData.final_price ?? 0}
-                            onChange={(e) =>
-                              handlePriceChange(list, 'final_price', getSafeNumber(e.target.value, 0))
-                            }
-                          />
+<Input
+  label="Precio Final ($) *"
+  type="number"
+  min="0"
+  step="1"
+  value={priceData.final_price ?? 0}
+  disabled={!priceData.is_fixed}
+  onChange={(e) =>
+    handlePriceChange(list, 'final_price', getSafeNumber(e.target.value, 0))
+  }
+/>
 
-                          <div className="flex h-10 items-center">
-                            <input
-                              type="checkbox"
-                              id={`fixed-${list.id}`}
-                              checked={Boolean(priceData.is_fixed)}
-                              disabled={Boolean(priceData.exclude_from_mass_update)}
-                              onChange={(e) => handlePriceChange(list, 'is_fixed', e.target.checked)}
-                              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-                            />
-                            <label
-                              htmlFor={`fixed-${list.id}`}
-                              className="ml-2 block text-sm text-gray-900"
-                            >
-                              Precio Fijo
-                            </label>
-                          </div>
+<div className="flex gap-4 items-center mt-2">
+  <label className="flex items-center gap-2 cursor-pointer text-sm">
+    <input
+      type="radio"
+      checked={priceData.is_fixed === true}
+      onChange={() => {
+        handlePriceChange(list, 'is_fixed', true);
+        handlePriceChange(list, 'exclude_from_mass_update', true);
+      }}
+    />
+    Precio fijo
+  </label>
 
-                          <div className="flex h-10 items-center">
-                            <input
-                              type="checkbox"
-                              id={`exclude-${list.id}`}
-                              checked={Boolean(priceData.exclude_from_mass_update)}
-                              disabled={Boolean(priceData.is_fixed)}
-                              onChange={(e) =>
-                                handlePriceChange(
-                                  list,
-                                  'exclude_from_mass_update',
-                                  e.target.checked
-                                )
-                              }
-                              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-                            />
-                            <label
-                              htmlFor={`exclude-${list.id}`}
-                              className="ml-2 block text-sm text-gray-900"
-                            >
-                              Excluir de recálculo
-                            </label>
-                          </div>
+  <label className="flex items-center gap-2 cursor-pointer text-sm">
+    <input
+      type="radio"
+      checked={priceData.is_fixed === false}
+      onChange={() => {
+        handlePriceChange(list, 'is_fixed', false);
+        handlePriceChange(list, 'exclude_from_mass_update', false);
+      }}
+    />
+    Precio calculado
+  </label>
+</div>
                         </div>
                       </div>
                     );
