@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useCart } from '../../hooks/useCart';
 import { useCashStore } from '../../store/useCashStore';
 import { CartItem } from './CartItem';
@@ -15,8 +15,9 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useProductsStore } from '../../store/useProductsStore';
+import { usePromotionsStore } from '../../store/usePromotionsStore';
 import { CobroModal } from './CobroModal';
-import { formatMoney } from '../../utils/money';
+import { formatMoney, roundMoney } from '../../utils/money';
 
 type ModalStatus = string;
 type SaleDiscountType = 'ninguno' | 'porcentaje' | 'fijo';
@@ -101,33 +102,30 @@ export const buildPrintHtml = (data: PostActionData) => {
 
   const rows = data.items
     .map((item) => {
-      console.log("TICKET ITEM RAW", item);
-      console.log("TICKET ITEM DEBUG", {
-        productName: item.productName,
-        quantity: item.quantity,
-        originalUnitPrice: item.originalUnitPrice,
-        finalUnitPrice: item.unitPrice,
-        lineDiscountAmount: (item.originalUnitPrice - item.unitPrice) * item.quantity,
-        expectedLineSubtotal: item.unitPrice * item.quantity
-      });
+      // El descuento total de la línea es la diferencia entre el precio base original y lo que se paga finalmente
+      const lineOriginalTotal = roundMoney(item.originalUnitPrice * item.quantity);
+      const lineDiscount = roundMoney(lineOriginalTotal - item.subtotal);
+      const unitDiscount = roundMoney(lineDiscount / item.quantity);
+      
       return `
         <tr>
           <td>${item.productName}</td>
           <td style="text-align:center;">${item.quantity}</td>
           <td style="text-align:right;">${formatMoney(item.originalUnitPrice)}</td>
           <td style="text-align:right;">${formatMoney(item.unitPrice)}</td>
-          ${item.discountAmount > 0 ? `<td style="text-align:right; color:green;">-${formatMoney(item.discountAmount)}</td>` : '<td style="text-align:right;">-</td>'}
+          <td style="text-align:right;">${unitDiscount > 0.01 ? formatMoney(unitDiscount) : '-'}</td>
           <td style="text-align:right;">${formatMoney(item.subtotal)}</td>
         </tr>
       `;
     })
     .join('');
 
-  console.log("TICKET TOTALS DEBUG", {
-    totalOriginal: data.subtotal,
-    totalDiscount: data.subtotal - data.total,
-    totalFinal: data.total
-  });
+  const grossSubtotal = data.items.reduce(
+    (acc, item) => acc + item.originalUnitPrice * item.quantity,
+    0
+  );
+  const totalFinal = data.items.reduce((acc, item) => acc + item.subtotal, 0);
+  const totalDiscount = grossSubtotal - totalFinal;
 
   const compact = data.status === 'completada';
 
@@ -255,15 +253,15 @@ export const buildPrintHtml = (data: PostActionData) => {
           <div class="totals">
             <div class="total-row">
               <span>Subtotal</span>
-              <span>${formatMoney(data.subtotal)}</span>
+              <span>${formatMoney(grossSubtotal)}</span>
             </div>
             <div class="total-row">
               <span>Descuento Total</span>
-              <span style="color:green;">-${formatMoney(data.subtotal - data.total)}</span>
+              <span style="color:green;">-${formatMoney(totalDiscount)}</span>
             </div>
             <div class="total-row total-final">
               <span>Total</span>
-              <span>${formatMoney(data.total)}</span>
+              <span>${formatMoney(totalFinal)}</span>
             </div>
           </div>
 
@@ -419,6 +417,7 @@ export const Cart: React.FC = () => {
 
   const { currentSession } = useCashStore();
   const { fetchProducts } = useProductsStore();
+  const { promotions } = usePromotionsStore();
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -430,7 +429,7 @@ export const Cart: React.FC = () => {
   useEffect(() => {
     if (items.length === 0) {
       setSelectedItemId(null);
-    } else if (!selectedItemId || !items.find(i => i.product.id === selectedItemId)) {
+    } else if (!selectedItemId || !items.find((i) => i.product.id === selectedItemId)) {
       setSelectedItemId(items[0].product.id);
     }
   }, [items, selectedItemId]);
@@ -448,21 +447,22 @@ export const Cart: React.FC = () => {
           setIsModalOpen(false);
         }
       } else if (selectedItemId) {
-        const item = items.find(i => i.product.id === selectedItemId);
+        const item = items.find((i) => i.product.id === selectedItemId);
         if (!item) return;
 
         if (e.key === '+') {
           e.preventDefault();
-          updateQuantity(item.product.id, item.quantity + 1);
+          updateQuantity(item.product.id, item.quantity + 1, promotions);
         } else if (e.key === '-') {
           e.preventDefault();
-          if (item.quantity > 1) updateQuantity(item.product.id, item.quantity - 1);
+          if (item.quantity > 1) updateQuantity(item.product.id, item.quantity - 1, promotions);
         } else if (e.key === 'Delete') {
           e.preventDefault();
           removeItem(item.product.id);
         }
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [items, isProcessing, isModalOpen, selectedItemId, updateQuantity, removeItem]);
@@ -503,35 +503,27 @@ export const Cart: React.FC = () => {
         presupuesto: '¡Presupuesto creado con éxito!',
       };
 
-      if (checkoutPayload) {
-        const correctedItems = checkoutPayload.p_items.map((item: any) => {
-          const originalUnitPrice = Number(item.original_price || item.price || 0);
-          const finalUnitPrice = Number(item.price || 0);
-          const quantity = Number(item.quantity || 0);
-          const lineDiscountAmount = (originalUnitPrice - finalUnitPrice) * quantity;
-          const subtotal = finalUnitPrice * quantity;
-          return {
-            productId: item.product_id,
-            productName: item.product_name,
-            quantity: quantity,
-            unitPrice: finalUnitPrice,
-            originalUnitPrice: originalUnitPrice,
-            discountAmount: lineDiscountAmount,
-            subtotal: subtotal,
-          };
-        });
-        
-        const subtotal = correctedItems.reduce((acc, item) => acc + (item.originalUnitPrice * item.quantity), 0);
-        const total = correctedItems.reduce((acc, item) => acc + item.subtotal, 0);
+       if (checkoutPayload && checkoutPayload.success) {
+  const correctedItems = checkoutPayload.printItems || [];
 
-        const snapshotAfterCheckout: PostActionData = {
-          status: modalStatus,
-          customerId,
-          items: correctedItems,
-          subtotal: subtotal,
-          total: total,
-          createdAt: new Date().toISOString(),
-        };
+  const grossSubtotal = correctedItems.reduce(
+    (acc, item) => acc + item.originalUnitPrice * item.quantity,
+    0
+  );
+
+  const totalFinal = correctedItems.reduce(
+    (acc, item) => acc + item.subtotal,
+    0
+  );
+
+  const snapshotAfterCheckout: PostActionData = {
+    status: modalStatus,
+    customerId,
+    items: correctedItems,
+    subtotal: grossSubtotal,
+    total: totalFinal,
+    createdAt: new Date().toISOString(),
+  };
         setPostActionData(snapshotAfterCheckout);
       }
 
@@ -576,7 +568,7 @@ export const Cart: React.FC = () => {
                 <List className="h-4 w-4 text-gray-500" />
                 <select
                   value={globalPriceList}
-                  onChange={(e) => setGlobalPriceList(e.target.value as GlobalPriceList)}
+                  onChange={(e) => setGlobalPriceList(e.target.value as GlobalPriceList, promotions)}
                   className="block w-full border-none bg-transparent py-1 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 >
                   <option value="lista_1">Lista 1</option>

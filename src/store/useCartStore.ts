@@ -48,8 +48,8 @@ const validateFractionalQuantity = (product: Product, quantity: number): number 
 
 const calculateItemValues = (item: CartItem) => {
   const normalizedDiscountType = normalizeDiscountType((item.discountType as CartDiscountType) || 'none');
-  const baseUnitPrice = Math.round(Number(item.price || 0));
-  const discountValue = Math.round(Number(item.discountValue || 0));
+  const baseUnitPrice = Number(item.price || 0);
+  const discountValue = Number(item.discountValue || 0);
   let finalUnitPrice = baseUnitPrice;
   let discountAmount = 0;
   if (normalizedDiscountType === 'percent' && discountValue > 0) {
@@ -64,10 +64,10 @@ const calculateItemValues = (item: CartItem) => {
 };
 
 const recalculateTotals = (items: CartItem[]) => {
-  const subtotal = roundMoney(items.reduce((acc, item) => acc + Number(item.price * item.quantity || 0), 0));
-  const totalDiscount = roundMoney(items.reduce((acc, item) => acc + Number(item.discountAmount || 0), 0));
-  const total = roundMoney(subtotal - totalDiscount);
-  return { subtotal, totalDiscount, total };
+  const grossSubtotal = roundMoney(items.reduce((acc, item) => acc + Number(item.originalPrice * item.quantity || 0), 0));
+  const total = roundMoney(items.reduce((acc, item) => acc + Number(item.subtotal || 0), 0));
+  const totalDiscount = roundMoney(grossSubtotal - total);
+  return { subtotal: grossSubtotal, totalDiscount, total };
 };
 
 export const useCartStore = create<CartState>((set) => ({
@@ -119,6 +119,9 @@ export const useCartStore = create<CartState>((set) => ({
         newItem.subtotal = recalculated.subtotal;
         newItems.push(newItem);
       }
+      
+      const item = newItems[existingItemIndex > -1 ? existingItemIndex : newItems.length - 1];
+
       return { items: newItems, ...recalculateTotals(newItems) };
     });
   },
@@ -138,7 +141,9 @@ export const useCartStore = create<CartState>((set) => ({
           if (validatedQuantity === null) return item;
           const updatedItem: CartItem = { ...item, quantity: Math.max(0, validatedQuantity) };
           const recalculated = calculateItemValues(updatedItem);
-          return { ...updatedItem, discountType: recalculated.normalizedDiscountType, discountAmount: recalculated.discountAmount, subtotal: recalculated.subtotal };
+          const newItem = { ...updatedItem, discountType: recalculated.normalizedDiscountType, discountAmount: recalculated.discountAmount, subtotal: recalculated.subtotal };
+          
+          return newItem;
         }
         return item;
       });
@@ -153,7 +158,9 @@ export const useCartStore = create<CartState>((set) => ({
         if (item.product.id === productId) {
           const updatedItem: CartItem = { ...item, discountType: normalizedDiscountType, discountValue: Number(discountValue || 0) };
           const recalculated = calculateItemValues(updatedItem);
-          return { ...updatedItem, discountType: recalculated.normalizedDiscountType, discountAmount: recalculated.discountAmount, subtotal: recalculated.subtotal };
+          const newItem = { ...updatedItem, discountType: recalculated.normalizedDiscountType, discountAmount: recalculated.discountAmount, subtotal: recalculated.subtotal };
+          
+          return newItem;
         }
         return item;
       });
@@ -171,10 +178,8 @@ export const useCartStore = create<CartState>((set) => ({
       
       const quantityUnits = Number(item.quantity || 0);
       const quantity = quantityUnits / factor;
-      const pricePerUnit = Number(item.price || 0);
-      const price = pricePerUnit * factor;
-      const originalPricePerUnit = Number(item.original_price ?? item.price ?? 0);
-      const originalPrice = originalPricePerUnit * factor;
+      const price = Number(item.price || 0);
+      const originalPrice = Number(item.original_price ?? item.price ?? 0);
       const discountValue = Number(item.discount_value || 0);
       const discountAmount = roundMoney(Number(item.discount_amount || 0));
       

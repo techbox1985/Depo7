@@ -6,7 +6,14 @@ const supabase = createClient(
 );
 
 async function run() {
-  const { data, error } = await supabase.from('products').select('*').limit(1);
-  console.log('products:', data, error);
+  const { data, error } = await supabase.rpc('get_functions', {});
+  if (error) {
+    // If get_functions doesn't exist, try a direct query if possible (though Supabase usually doesn't allow direct queries to system tables via anon key)
+    console.log('get_functions failed, trying direct query');
+    const { data: routines, error: routinesError } = await supabase.from('pg_proc').select('proname').limit(10);
+    console.log('routines:', routines, routinesError);
+  } else {
+    console.log('functions:', data);
+  }
 }
 run();

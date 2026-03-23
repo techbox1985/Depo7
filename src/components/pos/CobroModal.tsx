@@ -6,6 +6,7 @@ import { customersService, Customer } from '../../services/customersService';
 import { useCart } from '../../hooks/useCart';
 import { getEffectivePrice } from '../../utils/priceUtils';
 import { usePromotionsStore } from '../../store/usePromotionsStore';
+import { roundMoney } from '../../utils/money';
 
 interface CobroModalProps {
   isOpen: boolean;
@@ -95,7 +96,7 @@ export const CobroModal: React.FC<CobroModalProps> = ({
   const { promotions } = usePromotionsStore();
 
   const baseTotal = useMemo(() => {
-    if (priceList === 'lista_1') return Math.round(cartTotal);
+    if (priceList === 'lista_1') return cartTotal;
 
     const total = items.reduce((acc, item) => {
       const baseUnitPrice = getEffectivePrice(item.product, priceList as 'lista_1' | 'lista_2' | 'lista_3', promotions);
@@ -108,7 +109,7 @@ export const CobroModal: React.FC<CobroModalProps> = ({
             ? 'amount'
             : 'none';
 
-      const safeDiscountValue = Math.round(Number(item.discountValue || 0));
+      const safeDiscountValue = Number(item.discountValue || 0);
 
       if (normalizedType === 'percent' && safeDiscountValue > 0) {
         lineDiscountAmount = baseUnitPrice * (safeDiscountValue / 100);
@@ -120,7 +121,7 @@ export const CobroModal: React.FC<CobroModalProps> = ({
       return acc + finalUnitPrice * item.quantity;
     }, 0);
 
-    return Math.round(total);
+    return roundMoney(total);
   }, [items, cartTotal, priceList]);
 
   const finalTotal = useMemo(() => {
@@ -132,7 +133,7 @@ export const CobroModal: React.FC<CobroModalProps> = ({
       total = Math.max(0, baseTotal - discountValue);
     }
 
-    return Math.round(total);
+    return roundMoney(total);
   }, [baseTotal, discountType, discountValue]);
 
   useEffect(() => {
@@ -143,13 +144,13 @@ export const CobroModal: React.FC<CobroModalProps> = ({
       setAmountCash(0);
       setAmountDigital(finalTotal);
     } else if (paymentMethod === 'mixto') {
-      setAmountDigital(Math.max(0, Math.round(finalTotal - amountCash)));
+      setAmountDigital(Math.max(0, roundMoney(finalTotal - amountCash)));
     }
   }, [paymentMethod, finalTotal]);
 
   useEffect(() => {
     if (paymentMethod === 'mixto') {
-      setAmountDigital(Math.max(0, Math.round(finalTotal - amountCash)));
+      setAmountDigital(Math.max(0, roundMoney(finalTotal - amountCash)));
     }
   }, [amountCash, finalTotal, paymentMethod]);
 

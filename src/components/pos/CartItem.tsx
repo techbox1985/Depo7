@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { CartItem as CartItemType } from '../../types';
 import { useCart } from '../../hooks/useCart';
+import { usePromotionsStore } from '../../store/usePromotionsStore';
 import { Minus, Plus, Trash2, Tag, X } from 'lucide-react';
+import { formatMoney } from '../../utils/money';
 
 interface CartItemProps {
   item: CartItemType;
@@ -20,6 +22,7 @@ const normalizeDiscountType = (value?: string) => {
 
 export const CartItem: React.FC<CartItemProps> = ({ item, isSelected, onSelect }) => {
   const { updateQuantity, removeItem, updateItemDiscount } = useCart();
+  const { promotions } = usePromotionsStore();
   const [showDiscount, setShowDiscount] = useState(false);
   const [discountInput, setDiscountInput] = useState(item.discountValue?.toString() || '');
   const [imageError, setImageError] = useState(false);
@@ -33,9 +36,9 @@ export const CartItem: React.FC<CartItemProps> = ({ item, isSelected, onSelect }
     [item.discountType]
   );
 
-  const hasDiscount = normalizedDiscountType !== 'none' && Math.round(Number(item.discountValue || 0)) > 0;
+  const hasDiscount = normalizedDiscountType !== 'none' && Number(item.discountValue || 0) > 0;
 
-  const originalLineTotal = Math.round(item.price * item.quantity);
+  const originalLineTotal = item.originalPrice * item.quantity;
   const imageUrl = String(item.product.image_url || '').trim();
   const showPlaceholder = !imageUrl || imageError;
 
@@ -51,7 +54,7 @@ export const CartItem: React.FC<CartItemProps> = ({ item, isSelected, onSelect }
     e.stopPropagation();
     const nextQty = normalize(item.quantity + step);
     if (nextQty <= item.product.stock) {
-      updateQuantity(item.product.id, nextQty);
+      updateQuantity(item.product.id, nextQty, promotions);
     }
   };
 
@@ -59,7 +62,7 @@ export const CartItem: React.FC<CartItemProps> = ({ item, isSelected, onSelect }
     e.stopPropagation();
     const nextQty = normalize(item.quantity - step);
     if (nextQty > 0) {
-      updateQuantity(item.product.id, nextQty);
+      updateQuantity(item.product.id, nextQty, promotions);
     }
   };
 
@@ -84,21 +87,21 @@ export const CartItem: React.FC<CartItemProps> = ({ item, isSelected, onSelect }
     }
 
     if (!isNaN(numValue) && numValue > 0 && numValue <= item.product.stock) {
-      updateQuantity(item.product.id, numValue);
+      updateQuantity(item.product.id, numValue, promotions);
     }
   };
 
   const applyDiscount = (type: 'percent' | 'amount') => {
-    const val = Math.round(parseFloat(discountInput));
+    const val = parseFloat(discountInput);
 
     if (!isNaN(val) && val >= 0) {
-      updateItemDiscount(item.product.id, type, val);
+      updateItemDiscount(item.product.id, type, val, promotions);
       setShowDiscount(false);
     }
   };
 
   const removeDiscount = () => {
-    updateItemDiscount(item.product.id, 'none', 0);
+    updateItemDiscount(item.product.id, 'none', 0, promotions);
     setDiscountInput('');
     setShowDiscount(false);
   };
@@ -134,22 +137,23 @@ export const CartItem: React.FC<CartItemProps> = ({ item, isSelected, onSelect }
             <div className="flex justify-between text-sm font-medium text-gray-900">
               <h3 className="line-clamp-1">{item.product.name}</h3>
               <div className="text-right">
-                {hasDiscount && (
-                  <p className="text-xs text-gray-400 line-through">${item.originalPrice * item.quantity}</p>
+                {item.originalPrice > item.price && (
+                  <p className="text-xs text-gray-400 line-through">{formatMoney(originalLineTotal)}</p>
                 )}
-                <p className="ml-4">${item.subtotal}</p>
+                <p className="ml-4">{formatMoney(item.subtotal)}</p>
               </div>
             </div>
 
             <p className="mt-1 text-xs text-gray-500">
-              {item.priceType === 'minorista' ? 'Minorista' : 'Mayorista'} • Precio orig: ${item.originalPrice} • Final: ${item.price} / c/u
+              {item.priceType === 'lista_1' ? 'Lista 1' : item.priceType === 'lista_2' ? 'Lista 2' : 'Lista 3'} • {formatMoney(item.price)} / c/u
             </p>
 
             {hasDiscount && (
-              <p className="mt-0.5 text-xs text-green-600 font-bold">
-                Ahorro: {normalizedDiscountType === 'percent'
+              <p className="mt-0.5 text-xs text-green-600">
+                Descuento:{' '}
+                {normalizedDiscountType === 'percent'
                   ? `${item.discountValue}%`
-                  : `$${Math.round(Number(item.discountValue || 0))}`}
+                  : formatMoney(Number(item.discountValue || 0))}
               </p>
             )}
           </div>

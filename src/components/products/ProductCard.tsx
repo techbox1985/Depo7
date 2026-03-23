@@ -18,7 +18,6 @@ const SHW_LOGO_URL =
   'https://cdn.vectorstock.com/i/500p/98/75/shw-logo-design-template-with-strong-and-modern-vector-50999875.jpg';
 
 export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onViewHistory }) => {
-  console.log('ProductCard - product:', product);
   const { addItem } = useCart();
   const { promotions } = usePromotions();
   const [priceLists, setPriceLists] = useState<PriceList[]>([]);
@@ -53,7 +52,7 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, on
 
   const handleAddToCart = () => {
     if (!isOutOfStock && !isInactive) {
-      addItem(product, selectedPriceListCode as any, 1);
+      addItem(product, selectedPriceListCode as any, 1, promotions);
     }
   };
 
