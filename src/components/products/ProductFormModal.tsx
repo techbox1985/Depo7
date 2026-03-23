@@ -248,11 +248,16 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
       if (priceLists.length > 0) {
         const hasValidPriceForEveryList = priceLists.every((list) => {
           const priceData = productPrices[list.id];
-          return getSafeNumber(priceData?.final_price, 0) > 0;
+          // Solo exigimos precio final > 0 si es precio fijo.
+          // Si es precio calculado, el backend lo calculará.
+          if (priceData?.is_fixed) {
+            return getSafeNumber(priceData?.final_price, 0) > 0;
+          }
+          return true;
         });
 
         if (!hasValidPriceForEveryList) {
-          nextErrors.priceLists = 'Completá un precio final válido para cada lista activa.';
+          nextErrors.priceLists = 'Completá un precio final válido para cada lista con precio fijo.';
         }
       }
 
@@ -609,21 +614,42 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
                 onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
               />
 
-              {imageUrl && (
-                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                  <p className="mb-2 text-sm font-medium text-gray-700">Vista previa</p>
-                  <div className="flex justify-center overflow-hidden rounded-md border border-gray-200 bg-white p-3">
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <p className="mb-2 text-sm font-medium text-gray-700">Vista previa</p>
+                <div className="flex min-h-[160px] items-center justify-center overflow-hidden rounded-md border border-gray-200 bg-white p-3">
+                  {imageUrl ? (
                     <img
+                      key={imageUrl}
                       src={imageUrl}
                       alt="Vista previa del producto"
                       className="max-h-40 w-auto object-contain"
+                      referrerPolicy="no-referrer"
                       onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        const target = e.currentTarget as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent && !parent.querySelector('.img-error-msg')) {
+                          const msg = document.createElement('div');
+                          msg.className = 'img-error-msg text-xs text-gray-400 text-center';
+                          msg.innerText = 'Imagen no válida o no se pudo cargar';
+                          parent.appendChild(msg);
+                        }
+                      }}
+                      onLoad={(e) => {
+                        const target = e.currentTarget as HTMLImageElement;
+                        target.style.display = 'block';
+                        const parent = target.parentElement;
+                        const msg = parent?.querySelector('.img-error-msg');
+                        if (msg) msg.remove();
                       }}
                     />
-                  </div>
+                  ) : (
+                    <div className="text-center text-xs text-gray-400">
+                      Sin imagen seleccionada
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="mt-4 flex justify-end space-x-3 border-t border-gray-200 bg-white pt-4">
