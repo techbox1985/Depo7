@@ -503,33 +503,38 @@ export const Cart: React.FC = () => {
         presupuesto: '¡Presupuesto creado con éxito!',
       };
 
-       if (checkoutPayload && checkoutPayload.success) {
-  const correctedItems = checkoutPayload.printItems || [];
+      if (checkoutPayload && checkoutPayload.success) {
+        const isOffline = checkoutPayload.data?.offline;
+        const correctedItems = checkoutPayload.printItems || [];
 
-  const grossSubtotal = correctedItems.reduce(
-    (acc, item) => acc + item.originalUnitPrice * item.quantity,
-    0
-  );
+        const grossSubtotal = correctedItems.reduce(
+          (acc, item) => acc + item.originalUnitPrice * item.quantity,
+          0
+        );
 
-  const totalFinal = correctedItems.reduce(
-    (acc, item) => acc + item.subtotal,
-    0
-  );
+        const totalFinal = correctedItems.reduce(
+          (acc, item) => acc + item.subtotal,
+          0
+        );
 
-  const snapshotAfterCheckout: PostActionData = {
-    status: modalStatus,
-    customerId,
-    items: correctedItems,
-    subtotal: grossSubtotal,
-    total: totalFinal,
-    createdAt: new Date().toISOString(),
-  };
+        const snapshotAfterCheckout: PostActionData = {
+          status: modalStatus,
+          customerId,
+          items: correctedItems,
+          subtotal: grossSubtotal,
+          total: totalFinal,
+          createdAt: new Date().toISOString(),
+        };
         setPostActionData(snapshotAfterCheckout);
+        
+        if (isOffline) {
+          setSuccessMessage('Operación guardada localmente (Sin conexión)');
+        } else {
+          setSuccessMessage(messages[modalStatus]);
+        }
       }
 
-      setSuccessMessage(messages[modalStatus]);
-
-      if (modalStatus === 'completada') {
+      if (modalStatus === 'completada' && !checkoutPayload?.data?.offline) {
         await fetchProducts();
       }
 

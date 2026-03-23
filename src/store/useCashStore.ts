@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { cashService, CashClosing } from '../services/cashService';
+import { dbService, STORES } from '../services/db';
 
 interface CashState {
   currentSession: CashClosing | null;
@@ -9,6 +10,8 @@ interface CashState {
   closeSession: (closeAmount: number, summary: any) => Promise<void>;
 }
 
+const SESSION_CACHE_KEY = 'current_cash_session';
+
 export const useCashStore = create<CashState>((set, get) => ({
   currentSession: null,
   isLoading: false,
@@ -17,9 +20,20 @@ export const useCashStore = create<CashState>((set, get) => ({
     set({ isLoading: true });
     try {
       const session = await cashService.getCurrentSession();
+      if (session) {
+        await dbService.set(STORES.CONFIG, SESSION_CACHE_KEY, session);
+      } else {
+        // If online and no session, clear cache
+        await dbService.set(STORES.CONFIG, SESSION_CACHE_KEY, null);
+      }
       set({ currentSession: session });
     } catch (error) {
       console.error('Error fetching session:', error);
+      // Fallback to cache if offline
+      const cachedSession = await dbService.get<{ value: CashClosing }>(STORES.CONFIG, SESSION_CACHE_KEY);
+      if (cachedSession?.value) {
+        set({ currentSession: cachedSession.value });
+      }
     } finally {
       set({ isLoading: false });
     }
@@ -27,6 +41,7 @@ export const useCashStore = create<CashState>((set, get) => ({
   
   openSession: async (amount: number, userId?: string) => {
     const session = await cashService.openSession(amount, userId);
+    await dbService.set(STORES.CONFIG, SESSION_CACHE_KEY, session);
     set({ currentSession: session });
   },
   
@@ -35,6 +50,7 @@ export const useCashStore = create<CashState>((set, get) => ({
     if (!currentSession) return;
     
     await cashService.closeSession(currentSession.id, closeAmount, summary);
+    await dbService.set(STORES.CONFIG, SESSION_CACHE_KEY, null);
     set({ currentSession: null });
   }
 }));

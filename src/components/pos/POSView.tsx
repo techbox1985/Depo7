@@ -31,6 +31,12 @@ export const POSView: React.FC = () => {
     if (!editId) return;
 
     const loadSale = async () => {
+      if (!navigator.onLine) {
+        alert('No se puede editar una venta sin conexión a internet.');
+        localStorage.removeItem('pos_edit_sale_id');
+        return;
+      }
+
       setIsEditLoading(true);
       try {
         const { data: sale, error: saleError } = await supabase.from('sales').select('price_list').eq('id', editId).single();

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useCartStore } from '../store/useCartStore';
+import { useOfflineSalesStore } from '../store/useOfflineSalesStore';
+import { useOnlineStatus } from './useOnlineStatus';
 import { supabase } from '../services/supabaseClient';
 import { roundMoney } from '../utils/money';
 
@@ -15,6 +17,8 @@ type CheckoutOptions = {
 
 export const useCart = () => {
   const cartState = useCartStore();
+  const { addSale } = useOfflineSalesStore();
+  const isOnline = useOnlineStatus();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -141,6 +145,13 @@ export const useCart = () => {
             p_caja_id: sessionId || null,
             p_price_list: globalDbPriceList,
           };
+
+      if (!isOnline) {
+        console.log('OFFLINE - Saving sale locally');
+        await addSale(payload);
+        cartState.clearCart();
+        return { success: true, data: { offline: true }, printItems };
+      }
 
       const { data, error: rpcError } = await supabase.rpc(
         cartState.editingSaleId ? 'update_sale_with_items' : 'create_sale_with_status',

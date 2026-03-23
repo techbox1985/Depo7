@@ -17,9 +17,12 @@ export const useSyncOfflineSales = () => {
 
       for (const sale of pendingSales) {
         try {
-          const { error } = await supabase.rpc('create_sale_with_status', sale.payload);
+          const rpcName = sale.payload.p_sale_id ? 'update_sale_with_items' : 'create_sale_with_status';
+          const { error } = await supabase.rpc(rpcName, sale.payload);
           if (!error) {
             await removeSale(sale.id!);
+          } else {
+            console.error(`Error syncing sale ${sale.id}:`, error);
           }
         } catch (err) {
           console.error('Failed to sync sale:', err);

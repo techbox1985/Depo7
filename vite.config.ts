@@ -12,7 +12,7 @@ export default defineConfig(({mode}) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'icon-192.svg', 'icon-512.svg'],
         manifest: {
           name: 'SHW POS',
           short_name: 'SHW POS',
@@ -23,22 +23,22 @@ export default defineConfig(({mode}) => {
           start_url: '/',
           icons: [
             {
-              src: 'https://placehold.co/192x192.png',
+              src: '/icon-192.svg',
               sizes: '192x192',
-              type: 'image/png',
+              type: 'image/svg+xml',
               purpose: 'any maskable'
             },
             {
-              src: 'https://placehold.co/512x512.png',
+              src: '/icon-512.svg',
               sizes: '512x512',
-              type: 'image/png',
+              type: 'image/svg+xml',
               purpose: 'any maskable'
             }
           ]
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg}'],
-          navigateFallback: null,
+          navigateFallback: 'index.html',
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
