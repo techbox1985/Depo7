@@ -171,6 +171,7 @@ export const useCartStore = create<CartState>((set) => ({
   clearCart: () => set({ items: [], subtotal: 0, totalDiscount: 0, total: 0, globalPriceList: 'lista_1', editingSaleId: null, originalPriceList: null, originalItems: [] }),
 
   loadCartFromSale: (items, products, priceList) => {
+    const mappedPriceList = (priceList === 'mayorista' ? 'lista_2' : 'lista_1') as 'lista_1' | 'lista_2' | 'lista_3';
     const mappedItems: CartItem[] = (items || []).map((item: any, index: number) => {
       const product = products.find(p => p.id === item.product_id);
       const isFractionable = product?.es_fraccionable && product?.factor_fraccionamiento;
@@ -187,7 +188,7 @@ export const useCartStore = create<CartState>((set) => ({
 
       return {
         product: product || { id: item.product_id || `temp-${index}`, name: item.product_name || 'Producto' } as Product,
-        priceType: (['lista_1', 'lista_2', 'lista_3'].includes(item.price_list) ? item.price_list : 'lista_1') as 'lista_1' | 'lista_2' | 'lista_3',
+        priceType: (item.price_list === 'mayorista' ? 'lista_2' : 'lista_1') as 'lista_1' | 'lista_2' | 'lista_3',
         price, originalPrice, quantity,
         subtotal,
         discountType: (item.discount_type || 'none') as CartDiscountType,
@@ -195,6 +196,6 @@ export const useCartStore = create<CartState>((set) => ({
         discountAmount,
       };
     });
-    set({ items: mappedItems, ...recalculateTotals(mappedItems) });
+    set({ items: mappedItems, globalPriceList: mappedPriceList, ...recalculateTotals(mappedItems) });
   },
 }));

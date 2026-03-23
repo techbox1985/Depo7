@@ -28,43 +28,47 @@ export const useCart = () => {
     setError(null);
 
     try {
-      const itemsPayload = cartState.items.map((item) => {
-        const factor =
-          item.product.es_fraccionable && item.product.factor_fraccionamiento
-            ? item.product.factor_fraccionamiento
-            : 1;
+        const itemsPayload = cartState.items.map((item) => {
+          const factor =
+            item.product.es_fraccionable && item.product.factor_fraccionamiento
+              ? item.product.factor_fraccionamiento
+              : 1;
 
-        const safeQuantity = Number(item.quantity || 0);
-        const safeSubtotal = Number(item.subtotal || 0);
-        const safeOriginalPrice = Number(item.originalPrice || 0);
+          const safeQuantity = Number(item.quantity || 0);
+          const safeSubtotal = Number(item.subtotal || 0);
+          const safeOriginalPrice = Number(item.originalPrice || 0);
 
-        const finalUnitPrice =
-          safeQuantity > 0 ? roundMoney(safeSubtotal / safeQuantity) : 0;
+          const finalUnitPrice =
+            safeQuantity > 0 ? roundMoney(safeSubtotal / safeQuantity) : 0;
 
-        const quantityToSend = safeQuantity * factor;
-        const pricePerUnit = roundMoney(finalUnitPrice / factor);
-        const originalPricePerUnit = roundMoney(safeOriginalPrice / factor);
-        const totalUnitDiscount = roundMoney(originalPricePerUnit - pricePerUnit);
+          const quantityToSend = safeQuantity * factor;
+          const pricePerUnit = roundMoney(finalUnitPrice / factor);
+          const originalPricePerUnit = roundMoney(safeOriginalPrice / factor);
+          const totalUnitDiscount = roundMoney(originalPricePerUnit - pricePerUnit);
 
-        let dbDiscountType: 'ninguno' | 'porcentaje' | 'fijo' = 'ninguno';
-        if (item.discountType === 'percent' || item.discountType === 'porcentaje') {
-          dbDiscountType = 'porcentaje';
-        } else if (item.discountType === 'amount' || item.discountType === 'fijo') {
-          dbDiscountType = 'fijo';
-        }
+          let dbDiscountType: 'ninguno' | 'porcentaje' | 'fijo' = 'ninguno';
+          if (item.discountType === 'percent' || item.discountType === 'porcentaje') {
+            dbDiscountType = 'porcentaje';
+          } else if (item.discountType === 'amount' || item.discountType === 'fijo') {
+            dbDiscountType = 'fijo';
+          }
 
-        return {
-          product_id: item.product.id,
-          product_name: item.product.name || 'Producto',
-          quantity: quantityToSend,
-          price: pricePerUnit,
-          original_price: originalPricePerUnit,
-          discount_type: dbDiscountType,
-          discount_value: Number(item.discountValue || 0),
-          discount_amount: totalUnitDiscount,
-          subtotal: safeSubtotal,
-        };
-      });
+          // Mapeo de lista de precios para la DB (sale_items)
+          const dbPriceList = item.priceType === 'lista_1' ? 'minorista' : 'mayorista';
+
+          return {
+            product_id: item.product.id,
+            product_name: item.product.name || 'Producto',
+            quantity: quantityToSend,
+            price: pricePerUnit,
+            original_price: originalPricePerUnit,
+            discount_type: dbDiscountType,
+            discount_value: Number(item.discountValue || 0),
+            discount_amount: totalUnitDiscount,
+            subtotal: safeSubtotal,
+            price_list: dbPriceList,
+          };
+        });
 
       const printItems = cartState.items.map((item) => {
         const safeQuantity = Number(item.quantity || 0);
@@ -96,6 +100,14 @@ export const useCart = () => {
               ? options.discountType
               : 'ninguno';
 
+      const globalDbPriceList = cartState.globalPriceList === 'lista_1' ? 'minorista' : 'mayorista';
+
+      console.log('DEBUG - Price List Mapping:', {
+        frontend: cartState.globalPriceList,
+        backend: globalDbPriceList,
+        itemsCount: itemsPayload.length
+      });
+
       const payload = cartState.editingSaleId
         ? {
             p_sale_id: cartState.editingSaleId,
@@ -112,7 +124,7 @@ export const useCart = () => {
             p_valor_descuento: options.discountValue || 0,
             p_cliente_id: customerId || null,
             p_caja_id: sessionId || null,
-            p_price_list: cartState.items[0]?.priceType || 'lista_1',
+            p_price_list: globalDbPriceList,
           }
         : {
             p_total: cartState.total,
@@ -127,7 +139,7 @@ export const useCart = () => {
             p_tipo_descuento: normalizedSaleDiscountType,
             p_valor_descuento: options.discountValue || 0,
             p_caja_id: sessionId || null,
-            p_price_list: cartState.items[0]?.priceType || 'lista_1',
+            p_price_list: globalDbPriceList,
           };
 
       const { data, error: rpcError } = await supabase.rpc(
