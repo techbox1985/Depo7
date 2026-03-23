@@ -565,9 +565,15 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
       type="radio"
       checked={priceData.is_fixed === true}
       onChange={() => {
-        handlePriceChange(list, 'is_fixed', true);
-        handlePriceChange(list, 'exclude_from_mass_update', true);
-      }}
+  setProductPrices((prev) => ({
+    ...prev,
+    [list.id]: {
+      ...prev[list.id],
+      is_fixed: true,
+      exclude_from_mass_update: true,
+    },
+  }));
+}}
     />
     Precio fijo
   </label>
@@ -577,9 +583,15 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = React.memo(
       type="radio"
       checked={priceData.is_fixed === false}
       onChange={() => {
-        handlePriceChange(list, 'is_fixed', false);
-        handlePriceChange(list, 'exclude_from_mass_update', false);
-      }}
+  setProductPrices((prev) => ({
+    ...prev,
+    [list.id]: {
+      ...prev[list.id],
+      is_fixed: false,
+      exclude_from_mass_update: false,
+    },
+  }));
+}}
     />
     Precio calculado
   </label>
