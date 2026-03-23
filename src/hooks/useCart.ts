@@ -56,23 +56,39 @@ export const useCart = () => {
         };
       });
 
-      const payload = {
-        items: itemsPayload,
-        subtotal: cartState.subtotal,
-        total_discount: cartState.totalDiscount,
-        total: cartState.total,
-        payment_method: options.paymentMethod,
-        cash_amount: options.amountCash || 0,
-        customer_id: customerId,
-        caja_id: sessionId,
-        price_list: cartState.items[0]?.priceType || 'lista_1',
-        sale_id: cartState.editingSaleId,
-        status: modalStatus
+      const payload = cartState.editingSaleId ? {
+        p_sale_id: cartState.editingSaleId,
+        p_total: cartState.total,
+        p_total_productos: cartState.items.length,
+        p_estado: modalStatus,
+        p_items: itemsPayload,
+        p_metodo_pago: options.paymentMethod || 'efectivo',
+        p_tipo_digital: options.digitalType || null,
+        p_cuotas: options.installments || 1,
+        p_monto_efectivo: options.amountCash || 0,
+        p_monto_digital: options.amountDigital || 0,
+        p_tipo_descuento: options.discountType || 'ninguno',
+        p_valor_descuento: options.discountValue || 0,
+        p_cliente_id: customerId || null,
+        p_caja_id: sessionId || null,
+        p_price_list: cartState.items[0]?.priceType || 'lista_1'
+      } : {
+        p_total: cartState.total,
+        p_cliente_id: customerId || null,
+        p_estado: modalStatus,
+        p_items: itemsPayload,
+        p_metodo_pago: options.paymentMethod || 'efectivo',
+        p_tipo_digital: options.digitalType || null,
+        p_cuotas: options.installments || 1,
+        p_monto_efectivo: options.amountCash || 0,
+        p_monto_digital: options.amountDigital || 0,
+        p_tipo_descuento: options.discountType || 'ninguno',
+        p_valor_descuento: options.discountValue || 0,
+        p_caja_id: sessionId || null,
+        p_price_list: cartState.items[0]?.priceType || 'lista_1'
       };
 
-      const { data, error: rpcError } = await supabase.rpc(cartState.editingSaleId ? 'update_sale' : 'create_sale', {
-        p_data: payload
-      });
+      const { data, error: rpcError } = await supabase.rpc(cartState.editingSaleId ? 'update_sale_with_items' : 'create_sale_with_status', payload);
 
       if (rpcError) {
         console.error('RPC Error:', rpcError);
