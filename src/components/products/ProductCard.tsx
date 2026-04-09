@@ -56,6 +56,17 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, on
     }
   };
 
+  // Auto-agregado al carrito desde POS (escaneo o Enter)
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      if (e.detail && e.detail.product && e.detail.product.id === product.id) {
+        handleAddToCart();
+      }
+    };
+    window.addEventListener('pos-add-to-cart', handler as EventListener);
+    return () => window.removeEventListener('pos-add-to-cart', handler as EventListener);
+  }, [product, promotions, selectedPriceListCode]);
+
   return (
     <div
       className={`relative flex flex-col overflow-hidden rounded-xl border shadow-sm transition-shadow hover:shadow-md ${
@@ -103,11 +114,17 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, on
       </div>
 
       <div className="flex flex-1 flex-col p-4">
-        <div className="mb-2 flex items-start justify-between">
-          <h3 className="line-clamp-2 text-sm font-medium text-gray-900" title={product.name}>
-            {product.name}
-          </h3>
 
+        <div className="mb-2 flex items-start justify-between">
+          <div>
+            <h3 className="line-clamp-2 text-sm font-medium text-gray-900" title={product.name}>
+              {product.name}
+            </h3>
+            {/* Mostrar código debajo del nombre SOLO si existe */}
+            {product.cod && (
+              <div className="mt-1 text-xs text-gray-500">Cód: {product.cod}</div>
+            )}
+          </div>
           <div className="ml-2 flex flex-col items-end gap-1">
             {fractionalLabel && (
               <span className="inline-flex whitespace-nowrap rounded-full bg-blue-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
@@ -127,7 +144,6 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, on
                 <History className="h-4 w-4" />
               </button>
             )}
-
             <span
               className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${
                 isOutOfStock ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
