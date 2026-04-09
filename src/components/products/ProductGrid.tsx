@@ -147,7 +147,19 @@ export const ProductGrid: React.FC = React.memo(() => {
 
   const filteredProducts = useMemo(() => {
     const q = normalize(searchTerm);
-
+    // POS: solo filtrar por cod y name, con score
+    if (isPOS) {
+      if (!q) return sourceProducts;
+      return sourceProducts
+        .map((product) => ({ product, score: getSearchScore(product, q) }))
+        .filter((item) => item.score > 0)
+        .sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          return normalize(a.product.name).localeCompare(normalize(b.product.name));
+        })
+        .map((item) => item.product);
+    }
+    // Productos: mantener filtros avanzados
     const structurallyFiltered = sourceProducts.filter((product) => {
       const matchesRubro = filterRubro ? product.rubro === filterRubro : true;
       const matchesMarca = filterMarca ? product.marca === filterMarca : true;
@@ -173,8 +185,6 @@ export const ProductGrid: React.FC = React.memo(() => {
       .filter((item) => item.score > 0)
       .sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
-        // Prioridad absoluta: cod exacto, luego cod empieza, luego name empieza, luego cod incluye, luego name incluye
-        // Desempate por nombre ascendente
         return normalize(a.product.name).localeCompare(normalize(b.product.name));
       })
       .map((item) => item.product);
