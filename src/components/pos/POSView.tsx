@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { ProductGrid } from '../products/ProductGrid';
 import { POSSidebar } from './POSSidebar';
@@ -13,9 +14,21 @@ export const POSView: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditLoading, setIsEditLoading] = useState(false);
+  const [userId, setUserId] = useState<string | undefined>();
+  const [userEmail, setUserEmail] = useState<string | undefined>();
 
   useEffect(() => {
-    fetchCurrentSession();
+    const fetchUserAndSession = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+        setUserEmail(user.email);
+        await fetchCurrentSession(user.id);
+      } else {
+        await fetchCurrentSession();
+      }
+    };
+    fetchUserAndSession();
   }, [fetchCurrentSession]);
 
   useEffect(() => {

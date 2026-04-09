@@ -5,7 +5,7 @@ import { dbService, STORES } from '../services/db';
 interface CashState {
   currentSession: CashClosing | null;
   isLoading: boolean;
-  fetchCurrentSession: () => Promise<void>;
+  fetchCurrentSession: (userId?: string) => Promise<void>;
   openSession: (amount: number, userId?: string) => Promise<void>;
   closeSession: (closeAmount: number, summary: any) => Promise<void>;
 }
@@ -16,20 +16,18 @@ export const useCashStore = create<CashState>((set, get) => ({
   currentSession: null,
   isLoading: false,
   
-  fetchCurrentSession: async () => {
+  fetchCurrentSession: async (userId?: string) => {
     set({ isLoading: true });
     try {
-      const session = await cashService.getCurrentSession();
+      const session = await cashService.getCurrentSession(userId);
       if (session) {
         await dbService.set(STORES.CONFIG, SESSION_CACHE_KEY, session);
       } else {
-        // If online and no session, clear cache
         await dbService.set(STORES.CONFIG, SESSION_CACHE_KEY, null);
       }
       set({ currentSession: session });
     } catch (error) {
       console.error('Error fetching session:', error);
-      // Fallback to cache if offline
       const cachedSession = await dbService.get<{ value: CashClosing }>(STORES.CONFIG, SESSION_CACHE_KEY);
       if (cachedSession?.value) {
         set({ currentSession: cachedSession.value });

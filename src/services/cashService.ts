@@ -28,15 +28,13 @@ export interface CashClosing {
 }
 
 export const cashService = {
-  async getCurrentSession(): Promise<CashClosing | null> {
-    const { data, error } = await supabase
+  async getCurrentSession(userId?: string): Promise<CashClosing | null> {
+    let query = supabase
       .from('cash_closings')
       .select('*')
-      .eq('status', 'open')
-      .order('date_open', { ascending: false })
-      .limit(1)
-      .single();
-      
+      .eq('status', 'open');
+    if (userId) query = query.eq('user_id', userId);
+    const { data, error } = await query.order('date_open', { ascending: false }).limit(1).single();
     if (error && error.code !== 'PGRST116') {
       console.error('Error fetching current cash session:', error);
     }
