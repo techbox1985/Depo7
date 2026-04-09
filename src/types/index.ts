@@ -26,6 +26,7 @@ export interface ProductPrice {
 
 export interface Product {
   id: string;
+  cod?: string | null;
   name: string;
   price: number;
   wholesale_price: number;
@@ -43,7 +44,6 @@ export interface Product {
   factor_fraccionamiento: number | null;
   created_at: string;
   updated_at: string;
-  barcode: string | null;
   external_pk: string | null;
   product_prices?: ProductPrice[];
 }

@@ -1,8 +1,16 @@
+//
 import { supabase } from './supabaseClient';
 import { Product } from '../types';
 import { offlineDb } from './offlineDb';
 
 export const productsService = {
+    async getProductsSearchView(): Promise<Product[]> {
+      const { data, error } = await supabase
+        .from('products_search_vw')
+        .select('id, cod, name, stock, estado, rubro, marca, image_url');
+      if (error) throw error;
+      return data || [];
+    },
   async getProducts(): Promise<Product[]> {
     try {
       const { data, error } = await supabase.from('products').select('*, product_prices(*, price_lists(*))');
