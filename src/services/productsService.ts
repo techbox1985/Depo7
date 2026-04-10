@@ -5,14 +5,14 @@ import { offlineDb } from './offlineDb';
 export const productsService = {
   // Nueva función: traer todos los productos livianos para POS
   async getAllProductsForPOS(): Promise<Product[]> {
-    // Solo los campos mínimos, sin relaciones pesadas
+    // Traer los campos mínimos + product_prices (solo lista_1, lista_2, lista_3) para compatibilidad con getBasePrice
     let all: Product[] = [];
     let from = 0;
     const pageSize = 1000;
     while (true) {
       const { data, error } = await supabase
         .from('products')
-        .select('id, cod, name, stock, estado, price, image_url')
+        .select(`id, cod, name, stock, estado, price, image_url, product_prices(id, final_price, fixed_price, is_fixed, price_list_id, price_lists(id, code))`)
         .order('id', { ascending: true })
         .range(from, from + pageSize - 1);
       if (error) throw error;
