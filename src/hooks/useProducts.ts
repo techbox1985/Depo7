@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useProductsStore } from '../store/useProductsStore';
+import { useLocation } from 'react-router-dom';
 
 export const useProducts = () => {
   const { 
@@ -13,12 +14,14 @@ export const useProducts = () => {
     addProduct, 
     updateProduct 
   } = useProductsStore();
+  const location = useLocation();
+  const isPOS = location.pathname.includes('/pos');
 
   useEffect(() => {
     if (products.length === 0 && !isLoading && !error) {
-      fetchProducts();
+      fetchProducts(isPOS);
     }
-  }, [products.length, isLoading, error, fetchProducts]);
+  }, [products.length, isLoading, error, fetchProducts, isPOS]);
 
   return {
     products,

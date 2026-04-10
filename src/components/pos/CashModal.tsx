@@ -43,6 +43,9 @@ export const CashModal: React.FC<CashModalProps> = ({ isOpen, onClose, type, man
       if (user) {
         setUserId(user.id);
         setUserEmail(user.email);
+      } else {
+        setUserId(undefined);
+        setUserEmail(undefined);
       }
     };
     fetchUser();
@@ -148,7 +151,7 @@ export const CashModal: React.FC<CashModalProps> = ({ isOpen, onClose, type, man
             <div className="mb-6 bg-indigo-50 p-4 rounded-lg space-y-2 text-sm text-indigo-900 border border-indigo-100">
               <div className="flex justify-between items-center">
                 <span className="font-medium">Usuario:</span> 
-                <span>{userEmail || 'Usuario Anónimo'}</span>
+                <span>{userEmail ? userEmail : 'Usuario Anónimo'}</span>
               </div>
               <p className="text-xs text-indigo-700 mt-2">
                 Las ventas registradas en esta sesión quedarán asociadas a este usuario.

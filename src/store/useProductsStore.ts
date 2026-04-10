@@ -9,7 +9,7 @@ interface ProductsState {
   isLoadingMore: boolean;
   hasMore: boolean;
   error: string | null;
-  fetchProducts: () => Promise<void>;
+  fetchProducts: (isPOS?: boolean) => Promise<void>;
   fetchMoreProducts: () => Promise<void>;
   addProduct: (product: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => Promise<Product>;
   updateProduct: (id: string, updates: Partial<Product>) => Promise<Product>;
@@ -23,12 +23,18 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   isLoadingMore: false,
   hasMore: true,
   error: null,
-  fetchProducts: async () => {
+  fetchProducts: async (isPOS = false) => {
     set({ isLoading: true, error: null, hasMore: true });
     try {
-      const products = await productsService.getProductsPaginated(0, LIMIT);
-      await dbService.setAll(STORES.PRODUCTS, products);
-      set({ products, isLoading: false, hasMore: products.length === LIMIT });
+      let products: Product[];
+      if (isPOS) {
+        products = await productsService.getAllProductsForPOS();
+        set({ products, isLoading: false, hasMore: false });
+      } else {
+        products = await productsService.getProductsPaginated(0, LIMIT);
+        await dbService.setAll(STORES.PRODUCTS, products);
+        set({ products, isLoading: false, hasMore: products.length === LIMIT });
+      }
     } catch (error: any) {
       const cachedProducts = await dbService.getAll<Product>(STORES.PRODUCTS);
       if (cachedProducts.length > 0) {

@@ -1,9 +1,28 @@
-//
 import { supabase } from './supabaseClient';
 import { Product } from '../types';
 import { offlineDb } from './offlineDb';
 
 export const productsService = {
+  // Nueva función: traer todos los productos livianos para POS
+  async getAllProductsForPOS(): Promise<Product[]> {
+    // Solo los campos mínimos, sin relaciones pesadas
+    let all: Product[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, cod, name, stock, estado, price, image_url')
+        .order('id', { ascending: true })
+        .range(from, from + pageSize - 1);
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      all = all.concat(data);
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+    return all;
+  },
     async getProductsSearchView(): Promise<Product[]> {
       const { data, error } = await supabase
         .from('products_search_vw')

@@ -25,7 +25,9 @@ export const POSView: React.FC = () => {
         setUserEmail(user.email);
         await fetchCurrentSession(user.id);
       } else {
-        await fetchCurrentSession();
+        setUserId(undefined);
+        setUserEmail(undefined);
+        await fetchCurrentSession(undefined);
       }
     };
     fetchUserAndSession();
