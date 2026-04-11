@@ -16,6 +16,8 @@ import { formatMoney } from '../../utils/money';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { usePriceLists } from '../../hooks/usePriceLists';
 import { useOfflineSalesStore } from '../../store/useOfflineSalesStore';
+import PrintTicketModal from './PrintTicketModal';
+import { Ticket55mm } from './Ticket55mm';
 
 const PVenta: React.FC = () => {
   const { products, isLoading } = useProducts();
@@ -31,6 +33,7 @@ const PVenta: React.FC = () => {
   const [modalMode, setModalMode] = useState<SaleActionMode>('cobrar');
   const modalRef = useRef<any>(null);
   const [lastAction, setLastAction] = useState<any>(null); // para demo/confirmación
+  const [printModalOpen, setPrintModalOpen] = useState(false);
   // Offline sales store
   const { addSale: addOfflineSale } = useOfflineSalesStore();
   // Filtrado de productos
@@ -138,6 +141,10 @@ const PVenta: React.FC = () => {
     },
   ]);
 
+  // Estado para ticket post-venta
+  const [lastSaleData, setLastSaleData] = useState<any>(null);
+  const ticketRef = useRef<HTMLDivElement>(null);
+
   return (
     <div className="flex h-[90vh] w-full">
       {/* Izquierda: productos */}
@@ -243,89 +250,114 @@ const PVenta: React.FC = () => {
           onClose={() => setModalOpen(false)}
           onConfirm={async data => {
             setLastAction(data);
-            setModalOpen(false);
             if (data.priceList) setSelectedPriceList(data.priceList);
             if (data.customerId) setSelectedCustomer(data.customerId);
-            // Diagnóstico: caja_id puede llegar null si currentSession no está actualizado o no existe
-            // Corrección: abortar venta si no hay caja abierta
             if (!currentSession?.id) {
               alert('No hay caja/turno abierto. No se puede guardar la venta.');
+              setModalOpen(false);
               return;
             }
+            let ventaGuardada = null;
             try {
-
-// Atajos globales para acciones principales
-// F2: Cobrar (ya estaba)
-// F3: En cola
-// F4: Pedido
-// F5: Presupuestar
-// Debe ir dentro del componente y antes del return
-
-// --- INICIO ATJOS ---
-useKeyboardShortcuts([
-  {
-    key: 'F2',
-    callback: () => {
-      if (!modalOpen && currentSession) {
-        setModalMode('cobrar');
-        setModalOpen(true);
-      } else if (modalRef.current && typeof modalRef.current.confirm === 'function') {
-        modalRef.current.confirm();
-      }
-    },
-  },
-  {
-    key: 'F3',
-    callback: () => {
-      if (!modalOpen && currentSession) {
-        handleQueueSale();
-      }
-    },
-  },
-  {
-    key: 'F4',
-    callback: () => {
-      if (!modalOpen && currentSession) {
-        setModalMode('pedido');
-        setModalOpen(true);
-      }
-    },
-  },
-  {
-    key: 'F5',
-    callback: () => {
-      if (!modalOpen && currentSession) {
-        setModalMode('presupuesto');
-        setModalOpen(true);
-      }
-    },
-  },
-]);
-// --- FIN ATJOS ---
-              // Siempre pasar caja_id real
-              const sale = await import('../../services/salesService').then(m => m.salesService.createSaleSupabase(
+              ventaGuardada = await import('../../services/salesService').then(m => m.salesService.createSaleSupabase(
                 data.items,
                 data.total,
                 data.customerId,
                 'completada',
-                currentSession.id // nunca null
+                currentSession.id
               ));
               clearCart();
-              // @ts-ignore
+              setModalOpen(false);
               if ((window as any).reloadSalesHistory) (window as any).reloadSalesHistory();
             } catch (err) {
-              await addOfflineSale({
+              ventaGuardada = {
                 ...data,
                 fecha: new Date().toISOString(),
                 caja_id: currentSession.id,
-              });
+              };
+              await addOfflineSale(ventaGuardada);
+              clearCart();
+              setModalOpen(false);
             }
+            setTimeout(() => {
+              setLastSaleData({ ...ventaGuardada, ...data });
+              setPrintModalOpen(true);
+            }, 100);
           }}
           items={items}
           total={total}
           priceList={selectedPriceList}
           client={selectedCustomer ?? undefined}
         />
+      </div>
+      {/* Modal de impresión post-venta */}
+      <PrintTicketModal
+        open={printModalOpen}
+        onPrint={async () => {
+          // Esperar a que el ticket esté en el DOM
+          await new Promise(res => setTimeout(res, 100));
+          if (ticketRef.current) {
+            const printContents = ticketRef.current.innerHTML;
+            const win = window.open('', '', 'width=400,height=600');
+            if (win) {
+              win.document.write('<html><head><title>Ticket</title>');
+              win.document.write('<style>body{margin:0;padding:0;}@media print { body { width: 55mm !important; } }</style>');
+              win.document.write('</head><body>');
+              win.document.write(printContents);
+              win.document.write('</body></html>');
+              win.document.close();
+              win.focus();
+              setTimeout(() => { win.print(); win.close(); setPrintModalOpen(false); }, 300);
+            } else {
+              setPrintModalOpen(false);
+            }
+          } else {
+            setPrintModalOpen(false);
+          }
+        }}
+        onClose={() => {
+          setPrintModalOpen(false);
+        }}
+      />
+      {/* Render oculto del ticket para imprimir */}
+      <div style={{ position: 'absolute', left: '-9999px', top: 0 }} aria-hidden="true">
+        {printModalOpen && lastSaleData && (
+          <div ref={ticketRef}>
+            <Ticket55mm
+              logoUrl={"/logo.png"}
+              companyName={"SHW Distribuidora"}
+              companyAddress={"Dirección de la empresa"}
+              companyCUIT={"30-12345678-9"}
+              companyPhone={"1234-5678"}
+              date={new Date().toLocaleString()}
+              saleCode={lastSaleData.id || 'N/A'}
+              clientName={lastSaleData.client || ''}
+              products={lastSaleData.items?.map((item: any) => ({
+                name: item.product?.name || item.name,
+                quantity: item.quantity,
+                unitPrice: item.price,
+                subtotal: item.price * item.quantity,
+                discount: item.discount || 0,
+              })) || []}
+              total={lastSaleData.total}
+              generalDiscount={lastSaleData.discountValue || 0}
+              paymentBreakdown={[
+                lastSaleData.amountCash > 0 ? {
+                  type: 'efectivo',
+                  amount: lastSaleData.amountCash
+                } : null,
+                lastSaleData.amountDigital > 0 ? {
+                  type: 'digital',
+                  amount: lastSaleData.amountDigital,
+                  method: lastSaleData.digitalType,
+                  installments: lastSaleData.installments
+                } : null,
+              ].filter(Boolean)}
+              cashier={currentSession?.user_name || ''}
+              turno={currentSession?.id || ''}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

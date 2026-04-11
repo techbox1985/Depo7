@@ -1,5 +1,6 @@
 import CustomersView from '../components/customers/CustomersView';
 import PVenta from '../components/pventa';
+import { ExpensesPanel } from '../components/pventa/ExpensesPanel';
 import React from 'react';
 import { createBrowserRouter, Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -307,6 +308,14 @@ export const router = createBrowserRouter([
       {
         path: 'shortcuts',
         element: <ShortcutsView />,
+      },
+      {
+        path: 'expenses',
+        element: (
+          <div className="p-8">
+            <ExpensesPanel />
+          </div>
+        ),
       },
       {
         path: 'pventa',
