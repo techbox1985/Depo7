@@ -6,7 +6,9 @@ export const usePromotions = () => {
 
   useEffect(() => {
     fetchPromotions();
-  }, [fetchPromotions]);
+    // Solo una vez al montar
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     promotions,

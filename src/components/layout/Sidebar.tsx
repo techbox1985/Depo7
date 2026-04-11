@@ -5,8 +5,10 @@ import { cn } from '../ui/Button';
 
 const navItems = [
   { name: 'Panel', path: '/', icon: LayoutDashboard },
-  { name: 'Punto de venta', path: '/pos', icon: ShoppingCart },
+  { name: 'P.Venta', path: '/pventa', icon: ShoppingCart },
+  // { name: 'Punto de venta', path: '/pos', icon: ShoppingCart },
   { name: 'Productos', path: '/products', icon: Package },
+  { name: 'Clientes', path: '/customers', icon: Tag },
   { name: 'Listas de Precios', path: '/price-lists', icon: ListOrdered },
   { name: 'Promociones', path: '/promotions', icon: Tag },
   { name: 'Historial de Ventas', path: '/history', icon: FileText },

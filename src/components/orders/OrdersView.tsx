@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabaseClient';
 import { Printer, Pencil, Ban } from 'lucide-react';
 import { OrderDetailsModal } from './OrderDetailsModal';
-import { buildPrintHtml, PostActionData, CartSnapshotItem } from '../pos/Cart';
+import { buildPrintHtml, PostActionData, CartSnapshotItem } from './OrderPrintUtils';
 
 type Sale = {
   id: string;

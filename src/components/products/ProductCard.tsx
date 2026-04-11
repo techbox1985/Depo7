@@ -4,10 +4,8 @@ import { useCart } from '../../hooks/useCart';
 import { Button } from '../ui/Button';
 import { Plus, AlertCircle, History } from 'lucide-react';
 import { getEffectivePrice, getBasePrice, getActivePromotion } from '../../utils/priceUtils';
-import { usePromotions } from '../../hooks/usePromotions';
 import { formatMoney } from '../../utils/money';
 import { getFractionalLabel } from '../../utils/stockUtils';
-import { priceListsService } from '../../services/priceListsService';
 
 interface ProductCardProps {
   product: Product;
@@ -17,16 +15,10 @@ interface ProductCardProps {
 const SHW_LOGO_URL =
   'https://cdn.vectorstock.com/i/500p/98/75/shw-logo-design-template-with-strong-and-modern-vector-50999875.jpg';
 
-export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onViewHistory }) => {
+export const ProductCard: React.FC<ProductCardProps & { promotions: any[]; priceLists: PriceList[] }> = React.memo(({ product, onViewHistory, promotions, priceLists }) => {
   const { addItem } = useCart();
-  const { promotions } = usePromotions();
-  const [priceLists, setPriceLists] = useState<PriceList[]>([]);
   const [selectedPriceListCode, setSelectedPriceListCode] = useState<string>('lista_1');
   const [imageError, setImageError] = useState(false);
-
-  useEffect(() => {
-    priceListsService.getPriceLists().then(setPriceLists).catch(console.error);
-  }, []);
 
   const imageUrl = useMemo(() => {
     const raw = String(product.image_url || '').trim();
@@ -165,7 +157,7 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, on
             className="mb-3 block w-full rounded-md border-gray-300 bg-white py-1.5 pl-3 pr-10 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
             disabled={isOutOfStock || isInactive}
           >
-            {priceLists.map((list) => (
+            {(priceLists ?? []).map((list) => (
               <option key={list.id} value={list.code}>
                 {list.name}
               </option>

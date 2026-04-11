@@ -1,0 +1,37 @@
+import React, { useState, useEffect } from 'react';
+
+const emptyCustomer = { name: '', email: '', phone: '' };
+
+const CustomerFormModal = ({ open, onClose, onSave, initial }) => {
+  const [customer, setCustomer] = useState(emptyCustomer);
+  useEffect(() => {
+    setCustomer(initial || emptyCustomer);
+  }, [initial, open]);
+
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+        <h2 className="text-xl font-bold mb-4">{initial ? 'Editar cliente' : 'Nuevo cliente'}</h2>
+        <div className="mb-3">
+          <label className="block text-sm font-medium mb-1">Nombre</label>
+          <input className="border rounded px-2 py-1 w-full" value={customer.name} onChange={e => setCustomer({ ...customer, name: e.target.value })} />
+        </div>
+        <div className="mb-3">
+          <label className="block text-sm font-medium mb-1">Email</label>
+          <input className="border rounded px-2 py-1 w-full" value={customer.email} onChange={e => setCustomer({ ...customer, email: e.target.value })} />
+        </div>
+        <div className="mb-3">
+          <label className="block text-sm font-medium mb-1">Teléfono</label>
+          <input className="border rounded px-2 py-1 w-full" value={customer.phone} onChange={e => setCustomer({ ...customer, phone: e.target.value })} />
+        </div>
+        <div className="flex gap-2 justify-end mt-4">
+          <button className="px-4 py-2 rounded bg-gray-200" onClick={onClose}>Cancelar</button>
+          <button className="px-4 py-2 rounded bg-indigo-600 text-white font-bold" onClick={() => onSave(customer)}>{initial ? 'Guardar' : 'Crear'}</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CustomerFormModal;

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Modal } from '../ui/Modal';
 import { supabase } from '../../services/supabaseClient';
 import { Button } from '../ui/Button';
-import { buildPrintHtml, PostActionData, CartSnapshotItem } from '../pos/Cart';
+import { buildPrintHtml, PostActionData, CartSnapshotItem } from './OrderPrintUtils';
 
 type Sale = {
   id: string;

@@ -33,12 +33,12 @@ export const getBasePrice = (
 export const getEffectivePrice = (
   product: Product,
   priceType: 'lista_1' | 'lista_2' | 'lista_3',
-  promotions: Promotion[]
+  promotions?: Promotion[]
 ): number => {
   const basePrice = getBasePrice(product, priceType);
   let bestDiscountPercentage = 0;
 
-  promotions.forEach((promo) => {
+  (promotions ?? []).forEach((promo) => {
     const discount = getSafeNumber(promo.discount_percentage);
     let applies = false;
 
@@ -62,12 +62,12 @@ export const getEffectivePrice = (
 
 export const getActivePromotion = (
   product: Product,
-  promotions: Promotion[]
+  promotions?: Promotion[]
 ): Promotion | null => {
   let bestPromo: Promotion | null = null;
   let bestDiscount = 0;
 
-  promotions.forEach((promo) => {
+  (promotions ?? []).forEach((promo) => {
     const discount = getSafeNumber(promo.discount_percentage);
     let applies = false;
 

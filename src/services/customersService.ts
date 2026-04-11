@@ -20,5 +20,20 @@ export const customersService = {
       return [];
     }
     return data || [];
+  },
+  async addCustomer(customer: Partial<Customer>) {
+    const { data, error } = await supabase.from('customers').insert([customer]).select();
+    if (error) throw error;
+    return data?.[0];
+  },
+  async updateCustomer(id: string, customer: Partial<Customer>) {
+    const { data, error } = await supabase.from('customers').update(customer).eq('id', id).select();
+    if (error) throw error;
+    return data?.[0];
+  },
+  async deleteCustomer(id: string) {
+    const { error } = await supabase.from('customers').delete().eq('id', id);
+    if (error) throw error;
+    return true;
   }
 };

@@ -112,7 +112,20 @@ export const useCartStore = create<CartState>((set) => ({
         const recalculated = calculateItemValues(updatedItem);
         newItems[existingItemIndex] = { ...updatedItem, discountType: recalculated.normalizedDiscountType, discountAmount: recalculated.discountAmount, subtotal: recalculated.subtotal };
       } else {
-        const newItem: CartItem = { product, priceType: effectivePriceType, price, originalPrice, quantity: validatedQuantity, subtotal: 0, discountType: 'none', discountValue: 0, discountAmount: 0 };
+        // Blindar shape: siempre incluir product, cod, name, price, quantity
+        const newItem: CartItem = {
+          product,
+          priceType: effectivePriceType,
+          price,
+          originalPrice,
+          quantity: validatedQuantity,
+          subtotal: 0,
+          discountType: 'none',
+          discountValue: 0,
+          discountAmount: 0,
+          cod: product.cod,
+          name: product.name,
+        };
         const recalculated = calculateItemValues(newItem);
         newItem.discountType = recalculated.normalizedDiscountType;
         newItem.discountAmount = recalculated.discountAmount;

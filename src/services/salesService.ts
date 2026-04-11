@@ -18,22 +18,113 @@ export const salesService = {
     return { id: client_txn_id, codigo_venta: client_txn_id, estado: status, total } as any;
   },
 
-  async createSaleSupabase(items: CartItem[], total: number, customerId?: string, status: 'completada' | 'pendiente' | 'presupuesto' = 'completada'): Promise<Sale> {
-    const payload = {
-      p_total: total,
-      p_cliente_id: customerId || null,
-      p_estado: status,
-      p_items: items.map(item => ({
-        product_id: item.product.id,
-        product_name: item.product.name,
-        quantity: item.quantity,
-        price: item.price,
-        original_price: item.originalPrice
-      }))
+  async createSaleSupabase(items: CartItem[], total: number, customerId?: string, status: 'completada' | 'pendiente' | 'presupuesto' = 'completada', cajaId?: string | null): Promise<Sale> {
+    // 1. Armado de salePayload
+    const now = new Date().toISOString();
+    const codigo_venta = `VEN-${now.replace(/[-:.TZ]/g, '').slice(0, 14)}-${Math.floor(Math.random()*10000)}`;
+    const priceList = (items[0]?.price_list || items[0]?.priceList) === 'mayorista' ? 'mayorista' : 'minorista';
+    const metodoPago = 'efectivo';
+    const tipoDigital = null;
+    const tipoDescuento = 'ninguno';
+    const estadoVenta = ['completada', 'pendiente', 'presupuesto', 'cancelada'].includes(status) ? status : 'completada';
+    const cuotas = null;
+    const salePayload = {
+      codigo_venta,
+      cliente_id: customerId || null,
+      caja_id: cajaId || null,
+      total,
+      estado: estadoVenta,
+      metodo_pago: metodoPago,
+      tipo_digital: tipoDigital,
+      cuotas,
+      monto_efectivo: total,
+      monto_digital: 0,
+      tipo_descuento: tipoDescuento,
+      valor_descuento: 0,
+      total_productos: items.reduce((acc, item) => acc + Number(item.quantity), 0),
+      fecha: now,
+      creado_en: now,
+      actualizado_en: now,
+      price_list: priceList,
     };
 
-    const { data, error } = await supabase.rpc('create_sale_with_status', payload);
-    if (error) throw error;
-    return { id: data?.codigo_venta || 'unknown', ...payload, estado: status } as any;
+    // 2. Insert en sales
+    let createdSale;
+    try {
+      const { data, error } = await supabase
+        .from('sales')
+        .insert([salePayload])
+        .select()
+        .single();
+      if (error || !data) {
+        console.error('[createSaleSupabase] Error insert sales:', error);
+        throw error || new Error('No se pudo crear la venta');
+      }
+      createdSale = data;
+    } catch (err) {
+      console.error('[createSaleSupabase] CATCH error insert sales:', err);
+      throw err;
+    }
+
+    // 3. Validación de respuesta
+    if (!createdSale || !createdSale.id) {
+      console.error('[createSaleSupabase] Insert sales no devolvió id de venta', createdSale);
+      throw new Error('No se pudo obtener el id de la venta creada');
+    }
+
+    // 4. Armado de saleItemsToInsert
+    const saleItemsToInsert = items.map(item => {
+      const priceList = (item.price_list || item.priceList) === 'mayorista' ? 'mayorista' : 'minorista';
+      let discountType = 'none';
+      if (item.discountType === 'percent') discountType = 'percent';
+      else if (item.discountType === 'amount') discountType = 'amount';
+      return {
+        sale_id: createdSale.id,
+        product_id: item.product?.id || item.id,
+        product_name: item.name || item.product?.name || '',
+        quantity: Number(item.quantity),
+        price: Number(item.final_price || item.price || item.originalPrice || 0),
+        original_price: Number(item.originalPrice || item.price || 0),
+        created_at: now,
+        price_list: priceList,
+        discount_type: discountType,
+        discount_value: Number(item.discountValue || 0),
+        discount_amount: Number(item.discountAmount || 0),
+      };
+    });
+
+    // 5. Insert en sale_items
+    try {
+      const { error: itemsError } = await supabase.from('sale_items').insert(saleItemsToInsert);
+      if (itemsError) {
+        console.error('[createSaleSupabase] Error insert sale_items:', itemsError);
+        throw itemsError;
+      }
+    } catch (err) {
+      console.error('[createSaleSupabase] CATCH error insert sale_items:', err);
+      throw err;
+    }
+
+    // 6. Retorno final solo si todo fue exitoso
+    return {
+      id: createdSale.id,
+      codigo_venta: createdSale.codigo_venta,
+      cliente_id: createdSale.cliente_id,
+      caja_id: createdSale.caja_id,
+      total: createdSale.total,
+      estado: createdSale.estado,
+      metodo_pago: createdSale.metodo_pago,
+      tipo_digital: createdSale.tipo_digital,
+      cuotas: createdSale.cuotas,
+      monto_efectivo: createdSale.monto_efectivo,
+      monto_digital: createdSale.monto_digital,
+      tipo_descuento: createdSale.tipo_descuento,
+      valor_descuento: createdSale.valor_descuento,
+      price_list: createdSale.price_list,
+      total_productos: createdSale.total_productos,
+      fecha: createdSale.fecha,
+      creado_en: createdSale.creado_en,
+      actualizado_en: createdSale.actualizado_en,
+    };
   }
 };

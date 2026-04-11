@@ -1,3 +1,6 @@
+import CustomersView from '../components/customers/CustomersView';
+import PVenta from '../components/pventa';
+import React from 'react';
 import { createBrowserRouter, Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
@@ -257,13 +260,14 @@ export const router = createBrowserRouter([
     element: <AppLayout />,
     children: [
       {
+        path: 'customers',
+        element: <CustomersView />,
+      },
+      {
         index: true,
         element: <DashboardHome />,
       },
-      {
-        path: 'pos',
-        element: <POSView />,
-      },
+      // POS viejo eliminado
       {
         path: 'products',
         element: (
@@ -303,6 +307,14 @@ export const router = createBrowserRouter([
       {
         path: 'shortcuts',
         element: <ShortcutsView />,
+      },
+      {
+        path: 'pventa',
+        element: (
+          <div className="p-8">
+            <PVenta />
+          </div>
+        ),
       },
     ],
   },

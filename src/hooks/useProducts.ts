@@ -15,7 +15,7 @@ export const useProducts = () => {
     updateProduct 
   } = useProductsStore();
   const location = useLocation();
-  const isPOS = location.pathname.includes('/pos');
+  const isPOS = location.pathname.includes('/pos') || location.pathname.includes('/pventa');
 
   useEffect(() => {
     if (products.length === 0 && !isLoading && !error) {
