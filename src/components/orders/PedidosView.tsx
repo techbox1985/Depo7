@@ -16,7 +16,7 @@ export const PedidosView: React.FC = () => {
     const { data, error } = await supabase
       .from('sales')
       .select('*, customers(name)')
-      .eq('estado', 'pendiente')
+      .eq('sale_kind', 'pedido')
       .order('creado_en', { ascending: false });
     if (error) {
       console.error('Error fetching pedidos:', error);

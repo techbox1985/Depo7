@@ -72,7 +72,13 @@ export interface Sale {
   cliente_id: string | null;
   caja_id: string | null;
   total: number;
-  estado: 'completada' | 'pendiente' | 'presupuesto';
+  estado: 'completada' | 'pendiente' | 'en_proceso' | 'en_logistica' | 'entregado' | 'presupuesto' | 'cancelada' | 'cancelado';
+  sale_kind: 'venta' | 'pedido' | 'presupuesto';
+  truck_id?: string | null;
+  prepared_at?: string | null;
+  loaded_at?: string | null;
+  delivered_at?: string | null;
+  delivery_date?: string | null;
   metodo_pago: 'efectivo' | 'digital' | 'mixto';
   tipo_digital: 'mercadopago' | 'transferencia' | 'tarjeta' | null;
   cuotas: number | null;

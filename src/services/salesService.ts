@@ -3,22 +3,26 @@ import { CartItem, Sale } from '../types';
 import { offlineDb } from './offlineDb';
 
 export const salesService = {
-  async createSale(items: CartItem[], total: number, customerId?: string, status: 'completada' | 'pendiente' | 'presupuesto' = 'completada'): Promise<Sale> {
+  async createSale(items: CartItem[], total: number, customerId?: string, tipo: 'venta' | 'pedido' | 'presupuesto' = 'venta'): Promise<Sale> {
     const client_txn_id = crypto.randomUUID();
-    
+    let estado: Sale['estado'];
+    let sale_kind: Sale['sale_kind'];
+    if (tipo === 'venta') { sale_kind = 'venta'; estado = 'completada'; }
+    else if (tipo === 'pedido') { sale_kind = 'pedido'; estado = 'pendiente'; }
+    else { sale_kind = 'presupuesto'; estado = 'presupuesto'; }
+
     if (navigator.onLine) {
       try {
-        return await this.createSaleSupabase(items, total, customerId, status);
+        return await this.createSaleSupabase(items, total, customerId, sale_kind, estado);
       } catch (e) {
         console.warn('Supabase create sale failed, saving offline', e);
       }
     }
-    
-    await offlineDb.saveSale({ client_txn_id, items, total, customerId, status, createdAt: new Date().toISOString() });
-    return { id: client_txn_id, codigo_venta: client_txn_id, estado: status, total } as any;
+    await offlineDb.saveSale({ client_txn_id, items, total, customerId, sale_kind, estado, createdAt: new Date().toISOString() });
+    return { id: client_txn_id, codigo_venta: client_txn_id, estado, sale_kind, total } as any;
   },
 
-  async createSaleSupabase(items: CartItem[], total: number, customerId?: string, status: 'completada' | 'pendiente' | 'presupuesto' = 'completada', cajaId?: string | null): Promise<Sale> {
+  async createSaleSupabase(items: CartItem[], total: number, customerId?: string, sale_kind: 'venta' | 'pedido' | 'presupuesto', estado: Sale['estado'], cajaId?: string | null): Promise<Sale> {
     // 1. Armado de salePayload
     const now = new Date().toISOString();
     const codigo_venta = `VEN-${now.replace(/[-:.TZ]/g, '').slice(0, 14)}-${Math.floor(Math.random()*10000)}`;
@@ -26,14 +30,14 @@ export const salesService = {
     const metodoPago = 'efectivo';
     const tipoDigital = null;
     const tipoDescuento = 'ninguno';
-    const estadoVenta = ['completada', 'pendiente', 'presupuesto', 'cancelada'].includes(status) ? status : 'completada';
     const cuotas = null;
     const salePayload = {
       codigo_venta,
       cliente_id: customerId || null,
       caja_id: cajaId || null,
       total,
-      estado: estadoVenta,
+      estado,
+      sale_kind,
       metodo_pago: metodoPago,
       tipo_digital: tipoDigital,
       cuotas,
@@ -46,6 +50,11 @@ export const salesService = {
       creado_en: now,
       actualizado_en: now,
       price_list: priceList,
+      truck_id: null,
+      prepared_at: null,
+      loaded_at: null,
+      delivered_at: null,
+      delivery_date: null,
     };
 
     // 2. Insert en sales

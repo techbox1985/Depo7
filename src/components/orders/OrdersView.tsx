@@ -64,6 +64,7 @@ export const OrdersView: React.FC = () => {
     const { data, error } = await supabase
       .from('sales')
       .select('*, customers(name)')
+      .eq('sale_kind', 'venta')
       .order('creado_en', { ascending: false });
 
     if (error) {
