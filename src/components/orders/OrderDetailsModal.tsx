@@ -123,6 +123,8 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
         quantity: Number(item.quantity || 0),
         unitPrice: Number(item.price || 0),
         subtotal: Math.round(Number(item.quantity || 0) * Number(item.price || 0)),
+        originalUnitPrice: Number(item.original_price || item.price || 0),
+        discountAmount: 0,
       }));
 
       const ticketData: PostActionData = {
@@ -131,6 +133,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
         subtotal: cartItems.reduce((acc, item) => acc + item.subtotal, 0),
         total: Number(order.total || 0),
         createdAt: order.fecha || order.creado_en || new Date().toISOString(),
+        customerId: order.customers?.name || 'Consumidor Final',
       };
 
       const printWindow = window.open('', '_blank');
@@ -148,10 +151,10 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   };
 
   const handleEdit = () => {
-    console.log('EDITAR → POS (MODAL)', order.id);
+    console.log('EDITAR → PVenta (MODAL)', order.id);
     localStorage.setItem('pos_edit_sale_id', order.id);
     onClose();
-    navigate('/pos');
+    navigate('/pventa');
   };
 
   const handleConvertToSale = async () => {
