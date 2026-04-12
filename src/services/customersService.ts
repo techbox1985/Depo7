@@ -14,15 +14,29 @@ export interface Customer {
 
 export const customersService = {
   async getCustomers(): Promise<Customer[]> {
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*')
-      .order('name');
-    if (error) {
-      console.warn('Error fetching customers:', error);
-      return [];
+    let all: Customer[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    let keepGoing = true;
+    while (keepGoing) {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .order('name')
+        .range(from, from + pageSize - 1);
+      if (error) {
+        console.warn('Error fetching customers:', error);
+        return all;
+      }
+      if (data && data.length > 0) {
+        all = all.concat(data);
+        if (data.length < pageSize) keepGoing = false;
+        else from += pageSize;
+      } else {
+        keepGoing = false;
+      }
     }
-    return data || [];
+    return all;
   },
   async addCustomer(customer: Partial<Customer>) {
     const { data, error } = await supabase.from('customers').insert([customer]).select();

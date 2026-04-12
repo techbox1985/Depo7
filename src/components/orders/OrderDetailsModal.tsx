@@ -159,12 +159,15 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   };
 
   const getTitle = () => {
+    if (!order) return '';
     if (isCancelled(order.estado)) return 'Detalles de Movimiento Cancelado';
     if (order.estado === 'presupuesto') return 'Detalles de Presupuesto';
     if (order.estado === 'pendiente') return 'Detalles del Pedido';
     if (order.estado === 'completada') return 'Detalles de la Venta';
     return 'Detalles del Movimiento';
   };
+
+  if (!order) return null;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={getTitle()} size="lg">

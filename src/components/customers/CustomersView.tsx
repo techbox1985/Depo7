@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { customersService } from '../../services/customersService';
 import CustomerFormModal from './CustomerFormModal';
 import CustomerDetailModal from './CustomerDetailModal';
+import { getCustomerDebt } from '../../utils/debtUtils';
 
 const CustomersView = () => {
   const [customers, setCustomers] = useState([]);
@@ -47,11 +48,11 @@ const CustomersView = () => {
           <div className="text-gray-600">Total clientes</div>
         </div>
         <div className="bg-white rounded shadow p-4 flex flex-col items-center">
-          <div className="text-2xl font-bold text-yellow-600">0</div>
+          <div className="text-2xl font-bold text-yellow-600">{customers.filter(c => getCustomerDebt(c.debt_initial, c.total_ventas, c.total_pagos) > 0).length}</div>
           <div className="text-gray-600">Con deuda</div>
         </div>
         <div className="bg-white rounded shadow p-4 flex flex-col items-center">
-          <div className="text-2xl font-bold text-green-700">0</div>
+          <div className="text-2xl font-bold text-green-700">{customers.filter(c => c.location_address).length}</div>
           <div className="text-gray-600">Con ubicación</div>
         </div>
       </div>
@@ -77,11 +78,7 @@ const CustomersView = () => {
             </thead>
             <tbody>
               {customers.map(c => {
-                // Calcular deuda actual: debt_initial + ventas - pagos
-                const deudaInicial = Number(c.debt_initial) || 0;
-                const ventas = Number(c.total_ventas) || 0;
-                const pagos = Number(c.total_pagos) || 0;
-                const deudaActual = deudaInicial + ventas - pagos;
+                const deudaActual = getCustomerDebt(c.debt_initial, c.total_ventas, c.total_pagos);
                 return (
                   <tr key={c.id} className="hover:bg-indigo-50 cursor-pointer transition" onClick={e => {
                     if ((e.target as HTMLElement).tagName === 'BUTTON' || (e.target as HTMLElement).tagName === 'A') return;

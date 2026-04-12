@@ -15,6 +15,7 @@ import { CashClosures } from '../components/cash/CashClosures';
 import { PromotionsManager } from '../components/promotions/PromotionsManager';
 import { PurchasesList } from '../components/purchases/PurchasesList';
 import { OrdersView } from '../components/orders/OrdersView';
+import PedidosView from '../components/orders/PedidosView';
 import { Login } from '../components/auth/Login';
 import { PriceListsView } from '../components/price-lists/PriceListsView';
 
@@ -292,7 +293,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'orders',
-        element: <OrdersView />,
+        element: <PedidosView />,
       },
       {
         path: 'purchases',

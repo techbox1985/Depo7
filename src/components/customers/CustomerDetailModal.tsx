@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getCustomerDebt } from '../../utils/debtUtils';
 import { supabase } from '../../services/supabaseClient';
 
 interface CustomerDetailModalProps {
@@ -46,8 +47,7 @@ const CustomerDetailModal = ({ customer, open, onClose }: CustomerDetailModalPro
   // Calcular totales
   const totalVendido = sales.reduce((acc, s) => acc + (Number(s.total) || 0), 0);
   const totalPagado = payments.reduce((acc, p) => acc + (Number(p.importe) || 0), 0);
-  const deudaInicial = Number(customer?.debt_initial) || 0;
-  const deuda = deudaInicial + totalVendido - totalPagado;
+  const deuda = getCustomerDebt(customer?.debt_initial, totalVendido, totalPagado);
 
   // Unificar historial
   const movimientos = [
