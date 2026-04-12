@@ -84,32 +84,8 @@ export const ProductGrid: React.FC = React.memo(() => {
     productsService.getProductsStats().then(setStats).catch(console.error);
   }, []);
 
-  useEffect(() => {
-    if (isPOS) return;
-
-    let active = true;
-
-    const loadSearchView = async () => {
-      try {
-        setIsSearchLoading(true);
-        setSearchError(null);
-        const data = await productsService.getProductsSearchView();
-        if (!active) return;
-        setSearchProducts(data);
-      } catch (err: any) {
-        if (!active) return;
-        setSearchError(err?.message || 'Error al cargar productos');
-      } finally {
-        if (active) setIsSearchLoading(false);
-      }
-    };
-
-    loadSearchView();
-
-    return () => {
-      active = false;
-    };
-  }, [isPOS]);
+  // Eliminar fetch de products_search_vw: siempre usar products del store
+  // (No se necesita efecto para cargar productos_search_vw)
 
   const observer = useRef<IntersectionObserver | null>(null);
 
@@ -131,9 +107,19 @@ export const ProductGrid: React.FC = React.memo(() => {
     [isPOS, isLoadingMore, hasMore, fetchMoreProducts]
   );
 
+  // Usar siempre products del store, que sí trae costo y product_prices
   const sourceProducts = useMemo(() => {
-    return isPOS ? (posProducts as Array<Product | ProductSearchRow>) : (searchProducts as Array<Product | ProductSearchRow>);
-  }, [isPOS, posProducts, searchProducts]);
+    return posProducts;
+  }, [posProducts]);
+
+  // [DIAG Productos] Log temporal de producto real
+  // Cambiar el ID por el del producto real que falla
+  const DIAG_PRODUCT_ID = 'REEMPLAZAR_POR_ID_REAL';
+  const diagProduct = sourceProducts.find((p: any) => p.id === DIAG_PRODUCT_ID);
+  if (diagProduct) {
+    // eslint-disable-next-line no-console
+    console.log('[DIAG Productos] Producto completo:', JSON.stringify(diagProduct, null, 2));
+  }
 
   const rubros = useMemo(
     () => Array.from(new Set(sourceProducts.map((p) => p.rubro).filter(Boolean))),
@@ -248,27 +234,27 @@ export const ProductGrid: React.FC = React.memo(() => {
           <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm">
             <Package className="mb-2 h-6 w-6 text-indigo-500" />
             <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Total</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+            <p className="text-2xl font-bold text-gray-900">{sourceProducts.length}</p>
           </div>
           <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm">
             <CheckCircle className="mb-2 h-6 w-6 text-green-500" />
             <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Activos</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.activos}</p>
+            <p className="text-2xl font-bold text-gray-900">{sourceProducts.filter(p => (p.estado === 'activo' || p.estado === 'active' || p.estado === 'S')).length}</p>
           </div>
           <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm">
             <XCircle className="mb-2 h-6 w-6 text-red-500" />
             <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Inactivos</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.inactivos}</p>
+            <p className="text-2xl font-bold text-gray-900">{sourceProducts.filter(p => (p.estado === 'inactivo' || p.estado === 'inactive' || p.estado === 'N')).length}</p>
           </div>
           <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm">
             <Package className="mb-2 h-6 w-6 text-emerald-500" />
             <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Con Stock</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.con_stock}</p>
+            <p className="text-2xl font-bold text-gray-900">{sourceProducts.filter(p => Number(p.stock ?? 0) > 0).length}</p>
           </div>
           <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm">
             <AlertTriangle className="mb-2 h-6 w-6 text-amber-500" />
             <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Sin Stock</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.sin_stock}</p>
+            <p className="text-2xl font-bold text-gray-900">{sourceProducts.filter(p => Number(p.stock ?? 0) <= 0).length}</p>
           </div>
         </div>
       )}
@@ -404,7 +390,8 @@ export const ProductGrid: React.FC = React.memo(() => {
                   const lista1 = getBasePrice(typedProduct, 'lista_1');
                   const lista2 = getBasePrice(typedProduct, 'lista_2');
                   const lista3 = getBasePrice(typedProduct, 'lista_3');
-                  const costo = typedProduct.costo || 0;
+                  // Usar el campo real de costo, soportando variantes
+                  const costo = typedProduct.costo ?? typedProduct.cost_price ?? typedProduct.price ?? 0;
 
                   const margin1 = costo > 0 ? ((lista1 - costo) / costo) * 100 : 0;
                   const margin2 = costo > 0 ? ((lista2 - costo) / costo) * 100 : 0;

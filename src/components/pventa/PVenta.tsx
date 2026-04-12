@@ -48,6 +48,15 @@ const PVenta: React.FC = () => {
     );
   }, [products, search]);
 
+  // [DIAG PVenta] Log temporal de producto real
+  // Cambiar el ID por el del producto real que falla
+  const DIAG_PRODUCT_ID = 'REEMPLAZAR_POR_ID_REAL';
+  const diagProduct = products.find(p => p.id === DIAG_PRODUCT_ID);
+  if (diagProduct) {
+    // eslint-disable-next-line no-console
+    console.log('[DIAG PVenta] Producto completo:', JSON.stringify(diagProduct, null, 2));
+  }
+
   // Contador de productos
   const totalProductos = products.length;
   const productosMostrados = filteredProducts.length;
