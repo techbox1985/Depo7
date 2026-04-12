@@ -1,9 +1,25 @@
+
 import { supabase } from './supabaseClient';
 import { CartItem, Sale } from '../types';
 import { offlineDb } from './offlineDb';
 
+export interface CreateSaleSupabaseParams {
+  items: CartItem[];
+  total: number;
+  customerId?: string;
+  sale_kind: 'venta' | 'pedido' | 'presupuesto';
+  estado: Sale['estado'];
+  cajaId?: string | null;
+}
+
 export const salesService = {
-  async createSale(items: CartItem[], total: number, customerId?: string, tipo: 'venta' | 'pedido' | 'presupuesto' = 'venta'): Promise<Sale> {
+  async createSale(
+    items: CartItem[],
+    total: number,
+    customerId?: string,
+    tipo: 'venta' | 'pedido' | 'presupuesto' = 'venta',
+    cajaId?: string | null
+  ): Promise<Sale> {
     const client_txn_id = crypto.randomUUID();
     let estado: Sale['estado'];
     let sale_kind: Sale['sale_kind'];
@@ -13,16 +29,17 @@ export const salesService = {
 
     if (navigator.onLine) {
       try {
-        return await this.createSaleSupabase(items, total, customerId, sale_kind, estado);
+        return await this.createSaleSupabase({ items, total, customerId, sale_kind, estado, cajaId });
       } catch (e) {
         console.warn('Supabase create sale failed, saving offline', e);
       }
     }
-    await offlineDb.saveSale({ client_txn_id, items, total, customerId, sale_kind, estado, createdAt: new Date().toISOString() });
-    return { id: client_txn_id, codigo_venta: client_txn_id, estado, sale_kind, total } as any;
+    await offlineDb.saveSale({ client_txn_id, items, total, customerId, sale_kind, estado, cajaId, createdAt: new Date().toISOString() });
+    return { id: client_txn_id, codigo_venta: client_txn_id, estado, sale_kind, total, caja_id: cajaId } as any;
   },
 
-  async createSaleSupabase(items: CartItem[], total: number, customerId?: string, sale_kind: 'venta' | 'pedido' | 'presupuesto', estado: Sale['estado'], cajaId?: string | null): Promise<Sale> {
+  async createSaleSupabase(params: CreateSaleSupabaseParams): Promise<Sale> {
+    const { items, total, customerId, sale_kind, estado, cajaId } = params;
     // 1. Armado de salePayload
     const now = new Date().toISOString();
     const codigo_venta = `VEN-${now.replace(/[-:.TZ]/g, '').slice(0, 14)}-${Math.floor(Math.random()*10000)}`;
@@ -56,7 +73,9 @@ export const salesService = {
       delivered_at: null,
       delivery_date: null,
     };
-
+    // [DIAG salesService] Log de salePayload y caja_id
+    console.log('[DIAG salesService] salePayload:', salePayload);
+    console.log('[DIAG salesService] salePayload.caja_id:', salePayload.caja_id);
     // 2. Insert en sales
     let createdSale;
     try {
@@ -66,12 +85,13 @@ export const salesService = {
         .select()
         .single();
       if (error || !data) {
-        console.error('[createSaleSupabase] Error insert sales:', error);
+        console.error('[DIAG salesService] Error insert sales:', error);
         throw error || new Error('No se pudo crear la venta');
       }
       createdSale = data;
+      console.log('[DIAG salesService] Resultado insert sales:', createdSale);
     } catch (err) {
-      console.error('[createSaleSupabase] CATCH error insert sales:', err);
+      console.error('[DIAG salesService] CATCH error insert sales:', err);
       throw err;
     }
 
@@ -114,7 +134,24 @@ export const salesService = {
       throw err;
     }
 
-    // 6. Retorno final solo si todo fue exitoso
+    // 6. Descontar stock solo si es venta real (no pedido ni presupuesto)
+    if (params.sale_kind === 'venta' && params.estado === 'completada') {
+      for (const item of params.items) {
+        // Si el producto tiene control de stock (stock !== null && !isNaN)
+        if (item.product && typeof item.product.stock === 'number') {
+          try {
+            const oldStock = item.product.stock;
+            const newStock = oldStock - item.quantity;
+            // [DIAG Stock] producto, cantidad, stock anterior, stock nuevo
+            console.log('[DIAG Stock] Producto:', item.product.id, 'Cantidad vendida:', item.quantity, 'Stock anterior:', oldStock, 'Stock nuevo:', newStock);
+            await import('./productsService').then(m => m.productsService.updateProduct(item.product.id, { stock: newStock }));
+          } catch (err) {
+            console.error('[DIAG Stock] Error al descontar stock producto', item.product.id, err);
+          }
+        }
+      }
+    }
+    // 7. Retorno final solo si todo fue exitoso
     return {
       id: createdSale.id,
       codigo_venta: createdSale.codigo_venta,

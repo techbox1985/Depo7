@@ -51,12 +51,14 @@ export const useSyncOfflineSales = () => {
       for (const sale of pendingSales) {
         const payload = sale.payload || sale;
         try {
-          await salesService.createSaleSupabase(
-            payload.items,
-            payload.total,
-            payload.customerId,
-            payload.status || 'completada'
-          );
+          await salesService.createSaleSupabase({
+            items: payload.items,
+            total: payload.total,
+            customerId: payload.customerId,
+            sale_kind: payload.sale_kind || 'venta',
+            estado: payload.status || payload.estado || 'completada',
+            cajaId: payload.cajaId || payload.caja_id || null
+          });
           await removeSale(sale.id ?? sale.client_txn_id);
         } catch (err) {
           // Limpieza agresiva si el error es por codigo_venta o constraint

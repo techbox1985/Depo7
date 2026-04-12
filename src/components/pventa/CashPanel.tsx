@@ -17,6 +17,9 @@ const CashPanel = () => {
 
   // Refrescar ventas y gastos al cambiar caja
   const fetchData = async () => {
+    // [DIAG CashPanel] Log antes de la query de ventas del turno
+    console.log('[DIAG CashPanel] currentSession:', currentSession);
+    console.log('[DIAG CashPanel] currentSession?.id:', currentSession?.id);
     if (!currentSession?.id) {
       setSales([]);
       setExpenses([]);
@@ -29,6 +32,10 @@ const CashPanel = () => {
       .select('*')
       .eq('caja_id', currentSession.id)
       .not('estado', 'eq', 'cancelada');
+    // [DIAG CashPanel] Log después de la query
+    console.log('[DIAG CashPanel] salesError:', salesError);
+    console.log('[DIAG CashPanel] salesData:', salesData);
+    console.log('[DIAG CashPanel] cantidad ventas devueltas:', Array.isArray(salesData) ? salesData.length : 0);
     setSales(salesError ? [] : salesData || []);
     // Gastos
     try {

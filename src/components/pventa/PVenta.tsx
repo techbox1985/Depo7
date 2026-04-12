@@ -262,6 +262,12 @@ const PVenta: React.FC = () => {
             setLastAction(data);
             if (data.priceList) setSelectedPriceList(data.priceList);
             if (data.customerId) setSelectedCustomer(data.customerId);
+            // [DIAG PVenta] Logs antes de guardar venta
+            console.log('[DIAG PVenta] currentSession:', currentSession);
+            console.log('[DIAG PVenta] currentSession?.id:', currentSession?.id);
+            console.log('[DIAG PVenta] data.total:', data.total);
+            console.log('[DIAG PVenta] data.customerId:', data.customerId);
+            console.log('[DIAG PVenta] data.items:', data.items);
             if (!currentSession?.id) {
               alert('No hay caja/turno abierto. No se puede guardar la venta.');
               setModalOpen(false);
@@ -269,14 +275,18 @@ const PVenta: React.FC = () => {
             }
             let ventaGuardada = null;
             try {
-              ventaGuardada = await import('../../services/salesService').then(m => m.salesService.createSaleSupabase(
-                data.items,
-                data.total,
-                data.customerId,
-                'completada',
-                currentSession.id
-              ));
+              ventaGuardada = await import('../../services/salesService').then(m => m.salesService.createSaleSupabase({
+                items: data.items,
+                total: data.total,
+                customerId: data.customerId,
+                sale_kind: 'venta',
+                estado: 'completada',
+                cajaId: currentSession.id
+              }));
               clearCart();
+              // Reload controlado SOLO después de venta exitosa
+              console.log('[DIAG PVenta] Recargando vista tras venta exitosa para reflejar stock actualizado');
+              window.location.reload();
               setModalOpen(false);
               if ((window as any).reloadSalesHistory) (window as any).reloadSalesHistory();
             } catch (err) {
