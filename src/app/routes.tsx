@@ -1,5 +1,6 @@
 import CustomersView from '../components/customers/CustomersView';
 import PVenta from '../components/pventa';
+import PaymentsView from '../components/payments/PaymentsView';
 import { ExpensesGeneralPanel } from '../components/expenses/ExpensesGeneralPanel';
 import React from 'react';
 import { createBrowserRouter, Outlet } from 'react-router-dom';
@@ -8,9 +9,9 @@ import { supabase } from '../services/supabaseClient';
 import { Header } from '../components/layout/Header';
 import { Sidebar } from '../components/layout/Sidebar';
 import { POSView } from '../components/pos/POSView';
+import ProductGrid from '../components/products/ProductGrid';
 
 import { CashClosures } from '../components/cash/CashClosures';
-import ProductGrid from '../components/products/ProductGrid';
 import { PromotionsManager } from '../components/promotions/PromotionsManager';
 import { PurchasesList } from '../components/purchases/PurchasesList';
 import { OrdersView } from '../components/orders/OrdersView';
@@ -305,7 +306,6 @@ export const router = createBrowserRouter([
           </div>
         ),
       },
-
       {
         path: 'expenses',
         element: (
@@ -319,6 +319,14 @@ export const router = createBrowserRouter([
         element: (
           <div className="p-8">
             <PVenta />
+          </div>
+        ),
+      },
+      {
+        path: 'payments',
+        element: (
+          <div className="p-8">
+            <PaymentsView />
           </div>
         ),
       },

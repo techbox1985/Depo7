@@ -46,7 +46,8 @@ const CustomerDetailModal = ({ customer, open, onClose }: CustomerDetailModalPro
   // Calcular totales
   const totalVendido = sales.reduce((acc, s) => acc + (Number(s.total) || 0), 0);
   const totalPagado = payments.reduce((acc, p) => acc + (Number(p.importe) || 0), 0);
-  const deuda = totalVendido - totalPagado;
+  const deudaInicial = Number(customer?.debt_initial) || 0;
+  const deuda = deudaInicial + totalVendido - totalPagado;
 
   // Unificar historial
   const movimientos = [

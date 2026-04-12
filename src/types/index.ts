@@ -144,3 +144,29 @@ export interface PurchaseItem {
   expiration_date: string | null;
   created_at: string;
 }
+
+export interface CustomerPayment {
+  id: string;
+  customer_id: string;
+  amount: number;
+  payment_method: string;
+  notes?: string;
+  cash_closing_id?: string | null;
+  created_by?: string;
+  payment_date: string;
+  created_at: string;
+  updated_at: string;
+  customer?: { id: string; name: string };
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  location_address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  created_at: string;
+  debt_initial?: number | null;
+}

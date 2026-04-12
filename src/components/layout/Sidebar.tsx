@@ -10,16 +10,16 @@ const navItems = [
   { name: 'Cierres de Caja', path: '/closures', icon: FileText },
   { name: 'Clientes', path: '/customers', icon: Tag },
   { name: 'Productos', path: '/products', icon: Package },
+  { name: 'Pagos', path: '/payments', icon: FileText },
   { name: 'Listas de Precios', path: '/price-lists', icon: ListOrdered },
   { name: 'Promociones', path: '/promotions', icon: Tag },
   { name: 'Gastos', path: '/expenses', icon: FileText },
-
 ];
 
 const devNavItems = [
   { name: 'Pedidos', path: '/orders', icon: FileText },
   { name: 'Compras', path: '/purchases', icon: Truck },
-  { name: 'Pagos', path: '/payments', icon: FileText }, // Placeholder
+  // { name: 'Pagos', path: '/payments', icon: FileText }, // Eliminado: no existe módulo
   { name: 'Proveedores', path: '/providers', icon: Truck }, // Placeholder
 ];
 
@@ -46,7 +46,7 @@ export const Sidebar: React.FC = () => {
                 <>
                   <Icon
                     className={cn(
-                      'mr-3 h-5 w-5 flex-shrink-0',
+                      'mr-3 h-5 w-5 shrink-0',
                       isActive ? 'text-indigo-600' : 'text-gray-400 group-hover:text-gray-500'
                     )}
                   />
@@ -81,7 +81,7 @@ export const Sidebar: React.FC = () => {
                 <>
                   <Icon
                     className={cn(
-                      'mr-3 h-5 w-5 flex-shrink-0',
+                      'mr-3 h-5 w-5 shrink-0',
                       isActive ? 'text-indigo-600' : 'text-gray-400 group-hover:text-gray-500'
                     )}
                   />

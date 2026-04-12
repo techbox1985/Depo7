@@ -9,6 +9,7 @@ export interface Customer {
   latitude: number | null;
   longitude: number | null;
   created_at: string;
+  debt_initial?: number | null;
 }
 
 export const customersService = {
@@ -17,7 +18,6 @@ export const customersService = {
       .from('customers')
       .select('*')
       .order('name');
-      
     if (error) {
       console.warn('Error fetching customers:', error);
       return [];

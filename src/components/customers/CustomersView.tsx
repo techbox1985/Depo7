@@ -70,36 +70,45 @@ const CustomersView = () => {
                 <th className="text-left p-3">Email</th>
                 <th className="text-left p-3">Teléfono</th>
                 <th className="text-left p-3">Ubicación</th>
+                <th className="text-left p-3">Deuda actual</th>
                 <th className="text-left p-3">Mapa</th>
                 <th className="text-left p-3">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {customers.map(c => (
-                <tr key={c.id} className="hover:bg-indigo-50 cursor-pointer transition" onClick={e => {
-                  if ((e.target as HTMLElement).tagName === 'BUTTON' || (e.target as HTMLElement).tagName === 'A') return;
-                  setSelectedCustomer(c);
-                  setDetailOpen(true);
-                }}>
-                  <td className="p-3 font-medium text-indigo-900">{c.name}</td>
-                  <td className="p-3">{c.email}</td>
-                  <td className="p-3">{c.phone}</td>
-                  <td className="p-3">{c.location_address ? c.location_address : <span className="italic text-gray-400">Sin ubicación</span>}</td>
-                  <td className="p-3">
-                    {(c.latitude && c.longitude) ? (
-                      <a href={`https://www.google.com/maps?q=${c.latitude},${c.longitude}`} target="_blank" rel="noopener noreferrer" className="text-green-600 underline" onClick={e => e.stopPropagation()}>Abrir mapa</a>
-                    ) : c.location_address ? (
-                      <a href={`https://www.google.com/maps/search/${encodeURIComponent(c.location_address)}`} target="_blank" rel="noopener noreferrer" className="text-green-600 underline" onClick={e => e.stopPropagation()}>Abrir mapa</a>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="p-3">
-                    <button className="mr-2 text-blue-600 hover:underline" onClick={e => { e.stopPropagation(); setEditing(c); setModalOpen(true); }}>Editar</button>
-                    <button className="text-red-600 hover:underline" onClick={e => { e.stopPropagation(); handleDelete(c.id); }}>Eliminar</button>
-                  </td>
-                </tr>
-              ))}
+              {customers.map(c => {
+                // Calcular deuda actual: debt_initial + ventas - pagos
+                const deudaInicial = Number(c.debt_initial) || 0;
+                const ventas = Number(c.total_ventas) || 0;
+                const pagos = Number(c.total_pagos) || 0;
+                const deudaActual = deudaInicial + ventas - pagos;
+                return (
+                  <tr key={c.id} className="hover:bg-indigo-50 cursor-pointer transition" onClick={e => {
+                    if ((e.target as HTMLElement).tagName === 'BUTTON' || (e.target as HTMLElement).tagName === 'A') return;
+                    setSelectedCustomer(c);
+                    setDetailOpen(true);
+                  }}>
+                    <td className="p-3 font-medium text-indigo-900">{c.name}</td>
+                    <td className="p-3">{c.email}</td>
+                    <td className="p-3">{c.phone}</td>
+                    <td className="p-3">{c.location_address ? c.location_address : <span className="italic text-gray-400">Sin ubicación</span>}</td>
+                    <td className="p-3 font-bold text-red-700">{deudaActual === 0 ? '$0' : deudaActual.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</td>
+                    <td className="p-3">
+                      {(c.latitude && c.longitude) ? (
+                        <a href={`https://www.google.com/maps?q=${c.latitude},${c.longitude}`} target="_blank" rel="noopener noreferrer" className="text-green-600 underline" onClick={e => e.stopPropagation()}>Abrir mapa</a>
+                      ) : c.location_address ? (
+                        <a href={`https://www.google.com/maps/search/${encodeURIComponent(c.location_address)}`} target="_blank" rel="noopener noreferrer" className="text-green-600 underline" onClick={e => e.stopPropagation()}>Abrir mapa</a>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="p-3">
+                      <button className="mr-2 text-blue-600 hover:underline" onClick={e => { e.stopPropagation(); setEditing(c); setModalOpen(true); }}>Editar</button>
+                      <button className="text-red-600 hover:underline" onClick={e => { e.stopPropagation(); handleDelete(c.id); }}>Eliminar</button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
