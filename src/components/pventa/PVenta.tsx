@@ -151,9 +151,9 @@ const PVenta: React.FC = () => {
   const ticketRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="flex h-[90vh] w-full">
+    <div className="flex h-[90vh] w-full gap-4">
       {/* Izquierda: productos */}
-      <div className="flex-1 p-6 flex flex-col">
+      <div className="flex-[2_2_0%] min-w-[0] p-4 pr-2 flex flex-col">
         {/* Indicador de caja */}
         <div className="mb-2">
           {currentSession ? (
@@ -169,8 +169,8 @@ const PVenta: React.FC = () => {
           }} />
         )}
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">P.Venta</h1>
-          <div className="text-sm font-semibold text-gray-700 bg-gray-100 rounded px-3 py-1 border border-gray-300">
+          {/* El header global ya muestra el título y el botón de menú */}
+          <div className="text-sm font-semibold text-gray-700 bg-gray-100 rounded px-3 py-1 border border-gray-300 ml-auto">
             Mostrando {productosMostrados} de {totalProductos} productos
           </div>
         </div>
@@ -235,8 +235,8 @@ const PVenta: React.FC = () => {
         </div>
         {/* Eliminado bloque debug última acción */}
       </div>
-      {/* Panel derecho con tabs */}
-      <div className="w-96 border-l p-6 bg-gray-50 flex flex-col">
+      {/* Panel derecho con tabs (carrito, ventas, caja, gastos) */}
+      <div className="flex-[1.3_1.3_0%] min-w-[340px] max-w-[600px] border-l p-4 pl-6 bg-gray-50 flex flex-col">
         <RightPanelTabs
           CartPanel={() => (
             <CartPanel

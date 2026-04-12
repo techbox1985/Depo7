@@ -196,7 +196,7 @@ const DashboardHome = () => {
 const AppLayout = () => {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -225,7 +225,7 @@ const AppLayout = () => {
 
   return (
     <div className="flex h-screen flex-col bg-gray-50 overflow-hidden">
-      <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+      <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen} />
       <div className="flex flex-1 overflow-hidden relative">
         {/* Mobile Overlay */}
         {isSidebarOpen && (
@@ -237,19 +237,15 @@ const AppLayout = () => {
         
         {/* Sidebar */}
         <div className={`
-          fixed inset-y-0 left-0 z-30 w-64 bg-white transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col h-full
+          fixed inset-y-0 left-0 z-20 w-64 bg-white transform transition-transform duration-300 ease-in-out flex flex-col h-full
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
-          <div className="flex items-center justify-between p-4 lg:hidden border-b border-gray-200">
-            <span className="font-bold">Menú</span>
-            <button onClick={() => setIsSidebarOpen(false)} className="text-gray-500 p-2">X</button>
-          </div>
           <div className="flex-1 overflow-y-auto">
             <Sidebar />
           </div>
         </div>
         
-        <main className="flex-1 overflow-y-auto relative z-10">
+        <main className={`flex-1 overflow-y-auto relative z-10 transition-all duration-300 ${!isSidebarOpen ? '!ml-0' : 'lg:ml-64'}`}>
           <Outlet />
         </main>
       </div>

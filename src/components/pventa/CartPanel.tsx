@@ -2,6 +2,7 @@ import React from 'react';
 import { useCartStore } from '../../store/useCartStore';
 import QueuedSalesList from './QueuedSalesList';
 import { formatMoney } from '../../utils/money';
+import CartDiscountEditor from './CartDiscountEditor';
 
 const CartPanel = ({
   setModalMode,
@@ -12,34 +13,66 @@ const CartPanel = ({
   selectedPriceList,
   selectedCustomer
 }) => {
-  const { items, total, removeItem, updateQuantity } = useCartStore();
+  const { items, total, removeItem, updateQuantity, updateItemDiscount } = useCartStore();
   return (
     <>
       <div className="flex-1 overflow-auto">
         {items.length === 0 ? (
           <div className="text-gray-400">Carrito vacío</div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead>
               <tr className="bg-gray-100">
                 <th className="text-left p-2">Producto</th>
-                <th className="text-right p-2">Cant.</th>
+                <th className="text-center p-2">Cant.</th>
+                <th className="text-right p-2">Precio</th>
+                <th className="text-center p-2">Desc.</th>
                 <th className="text-right p-2">Subtotal</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {items.map((item, idx) => (
-                <tr key={item.product?.id || idx}>
-                  <td className="p-2">{item.product?.cod || '-'} {item.product?.name || '-'}</td>
-                  <td className="p-2 text-right">
-                    <button className="px-2" onClick={() => updateQuantity(item.product.id, item.quantity - 1)}>-</button>
-                    {item.quantity}
-                    <button className="px-2" onClick={() => updateQuantity(item.product.id, item.quantity + 1)}>+</button>
+                <tr key={item.product?.id || idx} className="align-middle border-b last:border-b-0">
+                  {/* Producto y nombre */}
+                  <td className="p-2 max-w-[120px] truncate">
+                    <div className="font-medium truncate">{item.product?.cod || '-'} {item.product?.name || '-'}</div>
                   </td>
-                  <td className="p-2 text-right">{formatMoney(item.price * item.quantity)}</td>
+                  {/* Cantidad */}
+                  <td className="p-2 text-center whitespace-nowrap">
+                    <div className="flex items-center justify-center gap-1">
+                      <button className="px-1 py-0.5 rounded bg-gray-200 hover:bg-gray-300" onClick={() => updateQuantity(item.product.id, item.quantity - 1)}>-</button>
+                      <span className="min-w-[18px] text-center">{item.quantity}</span>
+                      <button className="px-1 py-0.5 rounded bg-gray-200 hover:bg-gray-300" onClick={() => updateQuantity(item.product.id, item.quantity + 1)}>+</button>
+                    </div>
+                  </td>
+                  {/* Precio unitario */}
+                  <td className="p-2 text-right whitespace-nowrap">{formatMoney(item.price)}</td>
+                  {/* Editor de descuento compacto y label */}
+                  <td className="p-2 text-center min-w-[80px]">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <CartDiscountEditor
+                        discountType={item.discountType === 'percent' || item.discountType === 'amount' ? item.discountType : 'none'}
+                        discountValue={item.discountValue || 0}
+                        maxValue={item.price}
+                        onChange={(type, value) => updateItemDiscount(item.product.id, type, value)}
+                      />
+                      {item.discountType !== 'none' && item.discountAmount > 0 && (
+                        <span className="mt-0.5 px-1 rounded-full bg-green-100 text-green-700 text-[10px] font-semibold tracking-tight border border-green-200">
+                          -{formatMoney(item.discountAmount)}{item.discountType === 'percent' ? '%' : '$'}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  {/* Subtotal final */}
+                  <td className="p-2 text-right font-bold whitespace-nowrap">
+                    <span className="inline-block min-w-[56px] text-right">
+                      {formatMoney(item.subtotal)}
+                    </span>
+                  </td>
+                  {/* Eliminar */}
                   <td className="p-2 text-right">
-                    <button className="text-red-500" onClick={() => removeItem(item.product.id)}>x</button>
+                    <button className="text-red-500 hover:text-red-700 font-bold" onClick={() => removeItem(item.product.id)}>×</button>
                   </td>
                 </tr>
               ))}
