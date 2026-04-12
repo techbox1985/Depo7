@@ -245,7 +245,7 @@ const AppLayout = () => {
           </div>
         </div>
         
-        <main className={`flex-1 overflow-y-auto relative z-10 transition-all duration-300 ${!isSidebarOpen ? '!ml-0' : 'lg:ml-64'}`}>
+        <main className={`flex-1 overflow-y-auto relative z-10 transition-all duration-300 ${!isSidebarOpen ? 'ml-0!' : 'lg:ml-64'}`}>
           <Outlet />
         </main>
       </div>

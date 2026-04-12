@@ -223,6 +223,7 @@ const PVenta: React.FC = () => {
               <thead>
                 <tr className="bg-gray-100">
                   <th className="text-left p-2">Código</th>
+                  <th className="text-center p-2 w-14">Imagen</th>
                   <th className="text-left p-2">Nombre</th>
                   <th className="text-right p-2">Precio</th>
                   <th className="text-right p-2">Stock</th>
@@ -233,6 +234,23 @@ const PVenta: React.FC = () => {
                 {filteredProducts.map(prod => (
                   <tr key={prod.id}>
                     <td className="p-2">{prod.cod}</td>
+                    <td className="p-2 text-center align-middle">
+                      {prod.image_url ? (
+                        <img
+                          src={prod.image_url}
+                          alt={prod.name}
+                          className="w-12 h-12 object-cover rounded shadow border border-gray-200 mx-auto"
+                          style={{ background: '#f8f8f8' }}
+                        />
+                      ) : (
+                        <div className="w-12 h-12 flex items-center justify-center rounded bg-gray-100 border border-gray-200 mx-auto">
+                          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#cbd5e1">
+                            <rect x="4" y="4" width="16" height="16" rx="4" strokeWidth="2" />
+                            <path d="M8 16l2.5-3 2 2.5L16 13" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </div>
+                      )}
+                    </td>
                     <td className="p-2">{prod.name}</td>
                     <td className="p-2 text-right font-bold">{formatMoney(getBasePrice(prod, selectedPriceList))}</td>
                     <td className="p-2 text-right">{prod.stock ?? '-'}</td>
