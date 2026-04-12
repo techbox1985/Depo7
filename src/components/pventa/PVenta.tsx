@@ -26,7 +26,7 @@ const PVenta: React.FC = () => {
   const [selectedPriceList, setSelectedPriceList] = useState<'lista_1' | 'lista_2' | 'lista_3'>('lista_1');
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { items, addItem, removeItem, updateQuantity, clearCart } = useCartStore();
+  const { items, addItem, removeItem, updateQuantity, clearCart, subtotal, totalDiscount, total } = useCartStore();
   const { currentSession, fetchCurrentSession, openSession, closeSession } = useCashStore();
   const { queuedSales, addSale, removeSale, getSale } = useQueuedSalesStore();
   const [modalOpen, setModalOpen] = useState(false);
@@ -34,6 +34,7 @@ const PVenta: React.FC = () => {
   const modalRef = useRef<any>(null);
   const [lastAction, setLastAction] = useState<any>(null); // para demo/confirmación
   const [printModalOpen, setPrintModalOpen] = useState(false);
+  const [showPrintConfirm, setShowPrintConfirm] = useState(false);
   // Offline sales store
   const { addSale: addOfflineSale } = useOfflineSalesStore();
 
@@ -61,6 +62,11 @@ const PVenta: React.FC = () => {
   const totalProductos = products.length;
   const productosMostrados = filteredProducts.length;
 
+  // Fecha y hora actual
+  const now = new Date();
+  const fechaHoy = now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const horaActual = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
   // Agregado centralizado
   const handleAdd = (product: Product) => {
     addItem(product, selectedPriceList, 1, []);
@@ -78,8 +84,10 @@ const PVenta: React.FC = () => {
     }
   };
 
-  // Total calculado
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  // Subtotal bruto, descuento y total neto del carrito
+  // subtotal: suma de precios originales * cantidad
+  // totalDiscount: descuento total aplicado
+  // total: total neto a cobrar
 
   // Handler para poner en cola
   const handleQueueSale = () => {
@@ -162,14 +170,19 @@ const PVenta: React.FC = () => {
   return (
     <div className="flex h-[90vh] w-full gap-4">
       {/* Izquierda: productos */}
-      <div className="flex-[2_2_0%] min-w-[0] p-4 pr-2 flex flex-col">
-        {/* Indicador de caja */}
-        <div className="mb-2">
-          {currentSession ? (
-            <span className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-bold">Caja abierta</span>
-          ) : (
-            <span className="inline-block px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-bold">Caja cerrada</span>
-          )}
+      <div className="flex-[2_2_0%] min-w-0 p-4 pr-2 flex flex-col">
+        {/* Cabecera superior compacta y alineada */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2 text-xs font-bold text-green-800 bg-green-100 rounded px-2 py-1">
+            {currentSession ? 'Caja abierta' : 'Caja cerrada'}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-gray-700">
+            <span>{`Hoy ${fechaHoy}`}</span>
+            <span>·</span>
+            <span>{horaActual}</span>
+            <span>·</span>
+            <span>{`Mostrando ${productosMostrados} de ${totalProductos} productos`}</span>
+          </div>
         </div>
         {!currentSession && (
           <OpenCashModal onOpen={async (amount) => {
@@ -177,12 +190,6 @@ const PVenta: React.FC = () => {
             await fetchCurrentSession();
           }} />
         )}
-        <div className="flex items-center justify-between mb-4">
-          {/* El header global ya muestra el título y el botón de menú */}
-          <div className="text-sm font-semibold text-gray-700 bg-gray-100 rounded px-3 py-1 border border-gray-300 ml-auto">
-            Mostrando {productosMostrados} de {totalProductos} productos
-          </div>
-        </div>
         <div className="flex gap-2 mb-4">
           {/* Si no hay caja, bloquear input de venta */}
           <input
@@ -245,7 +252,7 @@ const PVenta: React.FC = () => {
         {/* Eliminado bloque debug última acción */}
       </div>
       {/* Panel derecho con tabs (carrito, ventas, caja, gastos) */}
-      <div className="flex-[1.3_1.3_0%] min-w-[340px] max-w-[600px] border-l p-4 pl-6 bg-gray-50 flex flex-col">
+      <div className="flex-[1.3_1.3_0%] min-w-85 max-w-150 border-l p-4 pl-6 bg-gray-50 flex flex-col">
         <RightPanelTabs
           CartPanel={() => (
             <CartPanel
@@ -267,16 +274,17 @@ const PVenta: React.FC = () => {
           open={modalOpen}
           mode={modalMode}
           onClose={() => setModalOpen(false)}
+          // Pasar items, subtotal, descuento y total neto
+          items={items}
+          subtotal={subtotal}
+          totalDiscount={totalDiscount}
+          total={total}
+          priceList={selectedPriceList}
+          client={selectedCustomer}
           onConfirm={async data => {
             setLastAction(data);
             if (data.priceList) setSelectedPriceList(data.priceList);
             if (data.customerId) setSelectedCustomer(data.customerId);
-            // [DIAG PVenta] Logs antes de guardar venta
-            console.log('[DIAG PVenta] currentSession:', currentSession);
-            console.log('[DIAG PVenta] currentSession?.id:', currentSession?.id);
-            console.log('[DIAG PVenta] data.total:', data.total);
-            console.log('[DIAG PVenta] data.customerId:', data.customerId);
-            console.log('[DIAG PVenta] data.items:', data.items);
             if (!currentSession?.id) {
               alert('No hay caja/turno abierto. No se puede guardar la venta.');
               setModalOpen(false);
@@ -286,6 +294,8 @@ const PVenta: React.FC = () => {
             try {
               ventaGuardada = await import('../../services/salesService').then(m => m.salesService.createSaleSupabase({
                 items: data.items,
+                subtotal,
+                totalDiscount,
                 total: data.total,
                 customerId: data.customerId,
                 sale_kind: 'venta',
@@ -293,9 +303,6 @@ const PVenta: React.FC = () => {
                 cajaId: currentSession.id
               }));
               clearCart();
-              // Reload controlado SOLO después de venta exitosa
-              console.log('[DIAG PVenta] Recargando vista tras venta exitosa para reflejar stock actualizado');
-              window.location.reload();
               setModalOpen(false);
               if ((window as any).reloadSalesHistory) (window as any).reloadSalesHistory();
             } catch (err) {
@@ -308,9 +315,10 @@ const PVenta: React.FC = () => {
               clearCart();
               setModalOpen(false);
             }
+            // Confirmación de impresión con modal propio
             setTimeout(() => {
               setLastSaleData({ ...ventaGuardada, ...data });
-              setPrintModalOpen(true);
+              setShowPrintConfirm(true);
             }, 100);
           }}
           items={items}
@@ -320,10 +328,21 @@ const PVenta: React.FC = () => {
         />
       </div>
       {/* Modal de impresión post-venta */}
+      {/* Modal de confirmación visual para imprimir ticket */}
+      <PrintTicketModal
+        open={showPrintConfirm}
+        onPrint={async () => {
+          setShowPrintConfirm(false);
+          setPrintModalOpen(true);
+        }}
+        onClose={() => {
+          setShowPrintConfirm(false);
+        }}
+      />
+      {/* Modal real de impresión, oculto, solo dispara impresión */}
       <PrintTicketModal
         open={printModalOpen}
         onPrint={async () => {
-          // Esperar a que el ticket esté en el DOM
           await new Promise(res => setTimeout(res, 100));
           if (ticketRef.current) {
             const printContents = ticketRef.current.innerHTML;

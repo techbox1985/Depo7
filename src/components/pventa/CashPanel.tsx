@@ -86,15 +86,17 @@ const CashPanel = () => {
 
   return (
     <div className="p-2">
-      <h3 className="font-bold mb-2">Caja actual</h3>
-      <div className="mb-2">Apertura: {currentSession.date_open ? new Date(currentSession.date_open).toLocaleString() : '-'}</div>
-      <div className="mb-2">Cantidad de ventas: <b>{cantidadVentas}</b></div>
-      <div className="mb-2">Total vendido: <b>{formatMoney(totalVendido)}</b></div>
-      <div className="mb-2">Efectivo: <b>{formatMoney(totalEfectivo)}</b></div>
-      <div className="mb-2">Digital: <b>{formatMoney(totalDigital)}</b></div>
-      <div className="mb-2">Gastos: <b>{formatMoney(totalGastos)}</b> {gastosMsg && <span className="text-xs text-gray-500">({gastosMsg})</span>}</div>
-      <div className="mb-2">Saldo: <b>{formatMoney(saldo)}</b></div>
-      <div className="mb-2">Estado: <b>{currentSession.status}</b></div>
+      <h3 className="font-bold mb-2">Caja</h3>
+      <div className="mb-2"><b>Apertura:</b> {currentSession.date_open ? new Date(currentSession.date_open).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}</div>
+      <div className="mb-2"><b>Caja inicial:</b> {formatMoney(currentSession.open_amount ?? 0)}</div>
+      <div className="mb-2"><b>Cantidad de ventas:</b> {cantidadVentas}</div>
+      <div className="mb-2"><b>Vendido en efectivo:</b> {formatMoney(totalEfectivo)}</div>
+      <div className="mb-2"><b>Vendido en digital:</b> {formatMoney(totalDigital)}</div>
+      <div className="mb-2"><b>Gastado en efectivo:</b> {formatMoney(totalGastos)}</div>
+      <div className="mb-2"><b>Gastado en digital:</b> 0</div>
+      <div className="mb-2"><b>Saldo esperado en efectivo:</b> {formatMoney((currentSession.open_amount ?? 0) + totalEfectivo - totalGastos)}</div>
+      <div className="mb-2"><b>Saldo esperado en digital:</b> {formatMoney(totalDigital)}</div>
+      <div className="mb-2"><b>Estado:</b> {currentSession.status === 'open' ? 'Caja abierta' : currentSession.status === 'closed' ? 'Caja cerrada' : currentSession.status}</div>
       {/* Botón de cargar gasto movido a ExpensesPanel */}
       <button
         className="mt-4 px-4 py-2 rounded bg-red-600 text-white font-bold"

@@ -96,24 +96,18 @@ export const Ticket55mm: React.FC<Ticket55mmProps> = ({
             <tr key={idx}>
               <td>{p.quantity}</td>
               <td>{p.name}</td>
-              <td style={{ textAlign: 'right' }}>{p.unitPrice.toFixed(2)}</td>
-              <td style={{ textAlign: 'right' }}>{p.subtotal.toFixed(2)}</td>
+              <td style={{ textAlign: 'right' }}>{Math.round(p.unitPrice)}</td>
+              <td style={{ textAlign: 'right' }}>{Math.round(p.subtotal)}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      {products.some(p => p.discount) && (
-        <div style={{ fontSize: 10, marginTop: 2 }}>
-          {products.filter(p => p.discount).map((p, idx) => (
-            <div key={idx}>Desc. {p.name}: -{p.discount?.toFixed(2)}</div>
-          ))}
-        </div>
-      )}
-      {generalDiscount && (
-        <div style={{ fontSize: 11, marginTop: 2 }}>Descuento general: -{generalDiscount.toFixed(2)}</div>
-      )}
-      <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
-      <div style={{ fontWeight: 'bold', fontSize: 13, textAlign: 'right' }}>TOTAL: {total.toFixed(2)}</div>
+      <div style={{ fontSize: 11, marginTop: 6, textAlign: 'right' }}>
+        <div>Subtotal: {Math.round(products.reduce((sum, p) => sum + p.unitPrice * p.quantity, 0))}</div>
+        <div>Descuento: -{Math.round(products.reduce((sum, p) => sum + (p.discount ?? 0), 0))}</div>
+        <div style={{ color: '#15803d', fontWeight: 'bold' }}>Ahorraste: {Math.round(products.reduce((sum, p) => sum + (p.discount ?? 0), 0))}</div>
+        <div style={{ color: '#1d4ed8', fontWeight: 'bold' }}>Total: {Math.round(total)}</div>
+      </div>
       <div style={{ fontSize: 11, marginTop: 2 }}>
         <div>Pago:</div>
         {paymentBreakdown.map((p, idx) => (

@@ -59,7 +59,9 @@ const CartPanel = ({
                       />
                       {item.discountType !== 'none' && item.discountAmount > 0 && (
                         <span className="mt-0.5 px-1 rounded-full bg-green-100 text-green-700 text-[10px] font-semibold tracking-tight border border-green-200">
-                          -{formatMoney(item.discountAmount)}{item.discountType === 'percent' ? '%' : '$'}
+                          {item.discountType === 'percent'
+                            ? `-${item.discountValue}%`
+                            : `-${formatMoney(item.discountAmount)}`}
                         </span>
                       )}
                     </div>

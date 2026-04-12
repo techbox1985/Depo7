@@ -53,15 +53,28 @@ const calculateItemValues = (item: CartItem) => {
   const discountValue = Number(item.discountValue || 0);
   let finalUnitPrice = baseUnitPrice;
   let discountAmount = 0;
+
   if (normalizedDiscountType === 'percent' && discountValue > 0) {
+    // Aplica descuento porcentual SOLO sobre el precio unitario
     discountAmount = baseUnitPrice * (discountValue / 100);
     finalUnitPrice = Math.max(0, baseUnitPrice - discountAmount);
   } else if (normalizedDiscountType === 'amount' && discountValue > 0) {
+    // Aplica descuento fijo SOLO sobre el precio unitario
     discountAmount = discountValue;
     finalUnitPrice = Math.max(0, baseUnitPrice - discountAmount);
+  } else {
+    discountAmount = 0;
+    finalUnitPrice = baseUnitPrice;
   }
+
+  // Subtotal = precio final * cantidad
   const subtotal = finalUnitPrice * Number(item.quantity || 0);
-  return { normalizedDiscountType, discountAmount: roundMoney(discountAmount), subtotal: roundMoney(subtotal) };
+  return {
+    normalizedDiscountType,
+    // El descuento total aplicado al ítem es por unidad * cantidad
+    discountAmount: roundMoney(discountAmount * Number(item.quantity || 0)),
+    subtotal: roundMoney(subtotal)
+  };
 };
 
 const recalculateTotals = (items: CartItem[]) => {

@@ -25,6 +25,8 @@ interface SaleActionModalProps {
   onClose: () => void;
   onConfirm: (data: any) => void;
   items: any[];
+  subtotal: number;
+  totalDiscount: number;
   total: number;
   priceList: string;
   client?: string;
@@ -36,6 +38,8 @@ export const SaleActionModal = forwardRef<any, SaleActionModalProps>(({
   onClose,
   onConfirm,
   items,
+  subtotal,
+  totalDiscount,
   total,
   priceList,
   client: initialClient,
@@ -65,11 +69,10 @@ export const SaleActionModal = forwardRef<any, SaleActionModalProps>(({
   // Validación
   const [showValidation, setShowValidation] = useState(false);
 
-  // Calcular total con descuento
-  let discountAmount = 0;
-  if (discountType === 'percent') discountAmount = total * (discountValue / 100);
-  if (discountType === 'fixed') discountAmount = discountValue;
-  const finalTotal = Math.max(0, total - discountAmount);
+  // El subtotal, descuento y total neto vienen del carrito
+  const bruto = subtotal;
+  const ahorro = totalDiscount;
+  const finalTotal = total;
 
   // Validación de pago mixto
   const paymentSum = Number(amountCash) + Number(amountDigital);
@@ -338,7 +341,16 @@ export const SaleActionModal = forwardRef<any, SaleActionModalProps>(({
             )}
           </>
         )}
-        <div className="mb-4 font-bold text-right">
+        <div className="mb-2 font-bold text-right">
+          Subtotal: {formatMoney(bruto)}
+        </div>
+        <div className="mb-2 font-bold text-right">
+          Descuento: -{formatMoney(ahorro)}
+        </div>
+        <div className="mb-2 font-bold text-right text-green-700">
+          Ahorraste: {formatMoney(ahorro)}
+        </div>
+        <div className="mb-4 font-bold text-right text-blue-700">
           Total: {formatMoney(finalTotal)}
         </div>
         <div className="flex gap-2 justify-end">
