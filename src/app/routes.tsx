@@ -1,6 +1,6 @@
 import CustomersView from '../components/customers/CustomersView';
 import PVenta from '../components/pventa';
-import { ExpensesPanel } from '../components/pventa/ExpensesPanel';
+import { ExpensesGeneralPanel } from '../components/expenses/ExpensesGeneralPanel';
 import React from 'react';
 import { createBrowserRouter, Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -8,15 +8,15 @@ import { supabase } from '../services/supabaseClient';
 import { Header } from '../components/layout/Header';
 import { Sidebar } from '../components/layout/Sidebar';
 import { POSView } from '../components/pos/POSView';
-import { DailySales } from '../components/pos/DailySales';
+
 import { CashClosures } from '../components/cash/CashClosures';
-import { ProductGrid } from '../components/products/ProductGrid';
+import ProductGrid from '../components/products/ProductGrid';
 import { PromotionsManager } from '../components/promotions/PromotionsManager';
 import { PurchasesList } from '../components/purchases/PurchasesList';
 import { OrdersView } from '../components/orders/OrdersView';
 import { Login } from '../components/auth/Login';
 import { PriceListsView } from '../components/price-lists/PriceListsView';
-import { ShortcutsView } from '../components/shortcuts/ShortcutsView';
+
 
 type DashboardStats = {
   salesToday: number;
@@ -305,15 +305,12 @@ export const router = createBrowserRouter([
           </div>
         ),
       },
-      {
-        path: 'shortcuts',
-        element: <ShortcutsView />,
-      },
+
       {
         path: 'expenses',
         element: (
           <div className="p-8">
-            <ExpensesPanel />
+            <ExpensesGeneralPanel />
           </div>
         ),
       },

@@ -16,6 +16,7 @@ export const ExpensesPanel: React.FC = () => {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<any | null>(null);
 
   useEffect(() => {
     const fetchExpenses = async () => {
@@ -26,7 +27,8 @@ export const ExpensesPanel: React.FC = () => {
       setLoading(true);
       try {
         const data = await expensesService.getExpensesByCajaId(currentSession.id);
-        setExpenses(data);
+        // Filtrar SOLO concept === 'POS' (protección extra)
+        setExpenses(Array.isArray(data) ? data.filter((g) => g.concept === 'POS') : []);
       } catch {
         setExpenses([]);
       }
@@ -39,15 +41,35 @@ export const ExpensesPanel: React.FC = () => {
     return () => window.removeEventListener('expenses:refresh', handler);
   }, [currentSession]);
 
-  const handleSaveExpense = async ({ concept, description, amount }: { concept: string; description: string; amount: number }) => {
+  const handleSaveExpense = async ({ concept, description, amount, payment_method }: { concept: string; description: string; amount: number; payment_method: string }) => {
     if (!currentSession?.id) return;
-    await expensesService.createExpense({ concept, description, amount, cash_closing_id: currentSession.id });
+    if (editingExpense) {
+      await expensesService.updateExpense(editingExpense.id, { concept, description, amount, payment_method });
+    } else {
+      await expensesService.createExpense({ concept, description, amount, payment_method, cash_closing_id: currentSession.id, origin_type: 'pos_turno' });
+    }
     setExpenseModalOpen(false);
+    setEditingExpense(null);
     // Refresh
+    if (!currentSession?.id) return;
     const data = await expensesService.getExpensesByCajaId(currentSession.id);
     setExpenses(data);
-    // Optionally, trigger global refresh
     window.dispatchEvent(new Event('expenses:refresh'));
+  };
+
+  const handleEdit = (expense: any) => {
+    setEditingExpense(expense);
+    setExpenseModalOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('¿Eliminar gasto?')) {
+      await expensesService.deleteExpense(id);
+      if (!currentSession?.id) return;
+      const data = await expensesService.getExpensesByCajaId(currentSession.id);
+      setExpenses(data);
+      window.dispatchEvent(new Event('expenses:refresh'));
+    }
   };
 
   if (!currentSession) {
@@ -78,6 +100,8 @@ export const ExpensesPanel: React.FC = () => {
               <tr className="bg-gray-50">
                 <th className="text-left px-4 py-2">Detalle</th>
                 <th className="text-right px-4 py-2">Monto</th>
+                <th className="text-left px-4 py-2">Forma de pago</th>
+                <th className="text-left px-4 py-2">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -89,6 +113,11 @@ export const ExpensesPanel: React.FC = () => {
                     <div className="text-xs text-gray-400">{formatDate(g.expense_date)}</div>
                   </td>
                   <td className="px-4 py-2 text-right font-bold">{formatMoney(g.amount)}</td>
+                  <td className="px-4 py-2">{g.payment_method || '-'}</td>
+                  <td className="px-4 py-2">
+                    <button className="text-blue-600 mr-2" onClick={() => handleEdit(g)}>Editar</button>
+                    <button className="text-red-600" onClick={() => handleDelete(g.id)}>Eliminar</button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -98,8 +127,10 @@ export const ExpensesPanel: React.FC = () => {
 
       <ExpenseFormModal
         isOpen={expenseModalOpen}
-        onClose={() => setExpenseModalOpen(false)}
+        onClose={() => { setExpenseModalOpen(false); setEditingExpense(null); }}
         onSave={handleSaveExpense}
+        initialData={editingExpense}
+        mode="pos"
       />
     </div>
   );

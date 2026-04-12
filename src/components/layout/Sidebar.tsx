@@ -6,20 +6,19 @@ import { cn } from '../ui/Button';
 const navItems = [
   { name: 'Panel', path: '/', icon: LayoutDashboard },
   { name: 'P.Venta', path: '/pventa', icon: ShoppingCart },
-  // { name: 'Punto de venta', path: '/pos', icon: ShoppingCart },
-  { name: 'Productos', path: '/products', icon: Package },
-  { name: 'Clientes', path: '/customers', icon: Tag },
-  { name: 'Listas de Precios', path: '/price-lists', icon: ListOrdered },
-  { name: 'Promociones', path: '/promotions', icon: Tag },
   { name: 'Historial de Ventas', path: '/history', icon: FileText },
   { name: 'Cierres de Caja', path: '/closures', icon: FileText },
-  { name: 'Atajos', path: '/shortcuts', icon: Keyboard },
+  { name: 'Clientes', path: '/customers', icon: Tag },
+  { name: 'Productos', path: '/products', icon: Package },
+  { name: 'Listas de Precios', path: '/price-lists', icon: ListOrdered },
+  { name: 'Promociones', path: '/promotions', icon: Tag },
+  { name: 'Gastos', path: '/expenses', icon: FileText },
+
 ];
 
 const devNavItems = [
   { name: 'Pedidos', path: '/orders', icon: FileText },
   { name: 'Compras', path: '/purchases', icon: Truck },
-  { name: 'Gastos', path: '/expenses', icon: FileText }, // Placeholder
   { name: 'Pagos', path: '/payments', icon: FileText }, // Placeholder
   { name: 'Proveedores', path: '/providers', icon: Truck }, // Placeholder
 ];

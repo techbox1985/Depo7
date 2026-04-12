@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+const CART_STORAGE_KEY = 'pos_cart_v1';
 import { CartItem, Product, Promotion } from '../types';
 import { getEffectivePrice, getBasePrice } from '../utils/priceUtils';
 import { roundMoney } from '../utils/money';
@@ -70,15 +71,42 @@ const recalculateTotals = (items: CartItem[]) => {
   return { subtotal: grossSubtotal, totalDiscount, total };
 };
 
-export const useCartStore = create<CartState>((set) => ({
-  items: [],
-  globalPriceList: 'lista_1',
-  subtotal: 0,
-  totalDiscount: 0,
-  total: 0,
-  editingSaleId: null,
-  originalPriceList: null,
-  originalItems: [],
+// --- Estado inicial con restauración de localStorage ---
+const getInitialCart = () => {
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed.items)) {
+        return {
+          items: parsed.items,
+          globalPriceList: parsed.globalPriceList || 'lista_1',
+          subtotal: parsed.subtotal || 0,
+          totalDiscount: parsed.totalDiscount || 0,
+          total: parsed.total || 0,
+          editingSaleId: null,
+          originalPriceList: null,
+          originalItems: [],
+        };
+      }
+    }
+  } catch (e) {
+    // fallback seguro
+  }
+  return {
+    items: [],
+    globalPriceList: 'lista_1',
+    subtotal: 0,
+    totalDiscount: 0,
+    total: 0,
+    editingSaleId: null,
+    originalPriceList: null,
+    originalItems: [],
+  };
+};
+
+export const useCartStore = create<CartState>((set, get) => ({
+  ...getInitialCart(),
 
   setEditingSaleId: (id, priceList, items) => set({ editingSaleId: id, originalPriceList: priceList || null, originalItems: items || [] }),
 
@@ -92,7 +120,9 @@ export const useCartStore = create<CartState>((set) => ({
         const recalculated = calculateItemValues(updatedItem as CartItem);
         return { ...updatedItem, discountType: recalculated.normalizedDiscountType, discountAmount: recalculated.discountAmount, subtotal: recalculated.subtotal };
       });
-      return { items: newItems, globalPriceList: priceList, ...recalculateTotals(newItems) };
+      const persist = { items: newItems, globalPriceList: priceList, ...recalculateTotals(newItems) };
+      try { localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(persist)); } catch {}
+      return persist;
     });
   },
 
@@ -135,14 +165,18 @@ export const useCartStore = create<CartState>((set) => ({
       
       const item = newItems[existingItemIndex > -1 ? existingItemIndex : newItems.length - 1];
 
-      return { items: newItems, ...recalculateTotals(newItems) };
+      const persist = { items: newItems, ...recalculateTotals(newItems), globalPriceList: state.globalPriceList };
+      try { localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(persist)); } catch {}
+      return persist;
     });
   },
 
   removeItem: (productId) => {
     set((state) => {
       const newItems = state.items.filter((item) => item.product.id !== productId);
-      return { items: newItems, ...recalculateTotals(newItems) };
+      const persist = { items: newItems, ...recalculateTotals(newItems), globalPriceList: state.globalPriceList };
+      try { localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(persist)); } catch {}
+      return persist;
     });
   },
 
@@ -160,7 +194,9 @@ export const useCartStore = create<CartState>((set) => ({
         }
         return item;
       });
-      return { items: newItems, ...recalculateTotals(newItems) };
+      const persist = { items: newItems, ...recalculateTotals(newItems), globalPriceList: state.globalPriceList };
+      try { localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(persist)); } catch {}
+      return persist;
     });
   },
 
@@ -177,11 +213,16 @@ export const useCartStore = create<CartState>((set) => ({
         }
         return item;
       });
-      return { items: newItems, ...recalculateTotals(newItems) };
+      const persist = { items: newItems, ...recalculateTotals(newItems), globalPriceList: state.globalPriceList };
+      try { localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(persist)); } catch {}
+      return persist;
     });
   },
 
-  clearCart: () => set({ items: [], subtotal: 0, totalDiscount: 0, total: 0, globalPriceList: 'lista_1', editingSaleId: null, originalPriceList: null, originalItems: [] }),
+  clearCart: () => {
+    set({ items: [], subtotal: 0, totalDiscount: 0, total: 0, globalPriceList: 'lista_1', editingSaleId: null, originalPriceList: null, originalItems: [] });
+    try { localStorage.removeItem(CART_STORAGE_KEY); } catch {}
+  },
 
   loadCartFromSale: (items, products, priceList) => {
     const mappedPriceList = (priceList === 'mayorista' ? 'lista_2' : 'lista_1') as 'lista_1' | 'lista_2' | 'lista_3';

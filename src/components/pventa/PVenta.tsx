@@ -36,6 +36,7 @@ const PVenta: React.FC = () => {
   const [printModalOpen, setPrintModalOpen] = useState(false);
   // Offline sales store
   const { addSale: addOfflineSale } = useOfflineSalesStore();
+
   // Filtrado de productos
   const filteredProducts = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -46,6 +47,10 @@ const PVenta: React.FC = () => {
       (p.name && p.name.toLowerCase().includes(q))
     );
   }, [products, search]);
+
+  // Contador de productos
+  const totalProductos = products.length;
+  const productosMostrados = filteredProducts.length;
 
   // Agregado centralizado
   const handleAdd = (product: Product) => {
@@ -163,7 +168,12 @@ const PVenta: React.FC = () => {
             await fetchCurrentSession();
           }} />
         )}
-        <h1 className="text-2xl font-bold mb-4">P.Venta</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold">P.Venta</h1>
+          <div className="text-sm font-semibold text-gray-700 bg-gray-100 rounded px-3 py-1 border border-gray-300">
+            Mostrando {productosMostrados} de {totalProductos} productos
+          </div>
+        </div>
         <div className="flex gap-2 mb-4">
           {/* Si no hay caja, bloquear input de venta */}
           <input

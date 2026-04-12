@@ -65,14 +65,16 @@ const CashPanel = () => {
     totalDigital += Number(sale.monto_digital || 0);
     cantidadVentas += 1;
   });
-  // Gastos: si no hay gastos reales, dejarlo claro
+  // Gastos: solo sumar los del turno actual y concept === 'POS'
   let totalGastos = 0;
   let gastosMsg = '';
-  if (expenses.length > 0) {
-    totalGastos = expenses.reduce((sum, g) => sum + Number(g.monto || 0), 0);
+  const gastosTurno = expenses.filter(g => g.concept === 'POS');
+  if (gastosTurno.length > 0) {
+    totalGastos = gastosTurno.reduce((sum, g) => sum + Number(g.amount || 0), 0);
   } else {
     gastosMsg = 'No hay gastos registrados para este turno.';
   }
+  // Saldo: apertura + efectivo + digital - gastos reales
   const saldo = currentSession.open_amount + totalEfectivo + totalDigital - totalGastos;
 
   return (

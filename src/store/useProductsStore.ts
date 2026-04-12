@@ -15,7 +15,7 @@ interface ProductsState {
   updateProduct: (id: string, updates: Partial<Product>) => Promise<Product>;
 }
 
-const LIMIT = 50;
+
 
 export const useProductsStore = create<ProductsState>((set, get) => ({
   products: [],
@@ -31,9 +31,10 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
         products = await productsService.getAllProductsForPOS();
         set({ products, isLoading: false, hasMore: false });
       } else {
-        products = await productsService.getProductsPaginated(0, LIMIT);
+        // Eliminar paginación por defecto, traer todos los productos
+        products = await productsService.getAllProductsForPOS();
         await dbService.setAll(STORES.PRODUCTS, products);
-        set({ products, isLoading: false, hasMore: products.length === LIMIT });
+        set({ products, isLoading: false, hasMore: false });
       }
     } catch (error: any) {
       const cachedProducts = await dbService.getAll<Product>(STORES.PRODUCTS);
@@ -50,13 +51,8 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
 
     set({ isLoadingMore: true, error: null });
     try {
-      const newProducts = await productsService.getProductsPaginated(products.length, LIMIT);
-      await dbService.setAll(STORES.PRODUCTS, [...products, ...newProducts]);
-      set({ 
-        products: [...products, ...newProducts], 
-        isLoadingMore: false,
-        hasMore: newProducts.length === LIMIT
-      });
+      // fetchMoreProducts ya no es necesario, pero lo dejamos vacío para compatibilidad
+      set({ isLoadingMore: false, hasMore: false });
     } catch (error: any) {
       set({ error: error.message, isLoadingMore: false });
     }
