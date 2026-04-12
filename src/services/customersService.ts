@@ -5,6 +5,9 @@ export interface Customer {
   name: string;
   email: string | null;
   phone: string | null;
+  location_address: string | null;
+  latitude: number | null;
+  longitude: number | null;
   created_at: string;
 }
 

@@ -86,25 +86,7 @@ const CashPanel = () => {
       <div className="mb-2">Gastos: <b>{formatMoney(totalGastos)}</b> {gastosMsg && <span className="text-xs text-gray-500">({gastosMsg})</span>}</div>
       <div className="mb-2">Saldo: <b>{formatMoney(saldo)}</b></div>
       <div className="mb-2">Estado: <b>{currentSession.status}</b></div>
-      <button
-        className="mt-2 px-4 py-2 rounded bg-green-600 text-white font-bold"
-        onClick={() => setExpenseModalOpen(true)}
-        disabled={!currentSession}
-      >Cargar gasto</button>
-      <ExpenseFormModal
-        isOpen={expenseModalOpen}
-        onClose={() => setExpenseModalOpen(false)}
-        onSave={async ({ concept, description, amount }) => {
-          if (!currentSession?.id) return;
-          await expensesService.createExpense({ concept, description, amount, cash_closing_id: currentSession.id });
-          setExpenseModalOpen(false);
-          await fetchData(); // Refresca gastos y ventas en Caja
-          // Si la vista general de gastos está abierta, refrescarla también
-          if (window.dispatchEvent) {
-            window.dispatchEvent(new CustomEvent('expenses:refresh'));
-          }
-        }}
-      />
+      {/* Botón de cargar gasto movido a ExpensesPanel */}
       <button
         className="mt-4 px-4 py-2 rounded bg-red-600 text-white font-bold"
         onClick={async () => {
