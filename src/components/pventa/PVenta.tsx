@@ -18,6 +18,8 @@ import { usePriceLists } from '../../hooks/usePriceLists';
 import { useOfflineSalesStore } from '../../store/useOfflineSalesStore';
 import PrintTicketModal from './PrintTicketModal';
 import { Ticket55mm } from './Ticket55mm';
+// import { useCompanySettings } from '../../hooks/useCompanySettings';
+import { useCompanySettings } from '../../hooks/useCompanySettings';
 
 const PVenta: React.FC = () => {
   const { products, isLoading } = useProducts();
@@ -167,6 +169,9 @@ const PVenta: React.FC = () => {
   const [lastSaleData, setLastSaleData] = useState<any>(null);
   const ticketRef = useRef<HTMLDivElement>(null);
 
+  // Leer datos reales de empresa
+  const { data: companySettings } = useCompanySettings();
+
   return (
     <div className="flex h-[90vh] w-full gap-4">
       {/* Izquierda: productos */}
@@ -298,7 +303,7 @@ const PVenta: React.FC = () => {
           totalDiscount={totalDiscount}
           total={total}
           priceList={selectedPriceList}
-          client={selectedCustomer}
+          client={selectedCustomer ?? undefined}
           onConfirm={async data => {
             setLastAction(data);
             if (data.priceList) setSelectedPriceList(data.priceList);
@@ -312,8 +317,6 @@ const PVenta: React.FC = () => {
             try {
               ventaGuardada = await import('../../services/salesService').then(m => m.salesService.createSaleSupabase({
                 items: data.items,
-                subtotal,
-                totalDiscount,
                 total: data.total,
                 customerId: data.customerId,
                 sale_kind: 'venta',
@@ -339,10 +342,6 @@ const PVenta: React.FC = () => {
               setShowPrintConfirm(true);
             }, 100);
           }}
-          items={items}
-          total={total}
-          priceList={selectedPriceList}
-          client={selectedCustomer ?? undefined}
         />
       </div>
       {/* Modal de impresión post-venta */}
@@ -390,37 +389,43 @@ const PVenta: React.FC = () => {
         {printModalOpen && lastSaleData && (
           <div ref={ticketRef}>
             <Ticket55mm
-              logoUrl={"/logo.png"}
-              companyName={"SHW Distribuidora"}
-              companyAddress={"Dirección de la empresa"}
-              companyCUIT={"30-12345678-9"}
-              companyPhone={"1234-5678"}
+              logoUrl={companySettings?.logo_url || "/logo.png"}
+              companyName={companySettings?.company_name || ""}
+              companyAddress={companySettings?.address || ""}
+              companyCUIT={companySettings?.cuit || ""}
+              companyPhone={companySettings?.phone || ""}
               date={new Date().toLocaleString()}
               saleCode={lastSaleData.id || 'N/A'}
               clientName={lastSaleData.client || ''}
               products={lastSaleData.items?.map((item: any) => ({
                 name: item.product?.name || item.name,
                 quantity: item.quantity,
-                unitPrice: item.price,
-                subtotal: item.price * item.quantity,
-                discount: item.discount || 0,
+                unitPrice: item.price, // precio bruto unitario
+                price: item.price, // alias explícito
+                discount: item.discountAmount ?? item.discount ?? 0,
+                discountType: item.discountType ?? 'none',
+                subtotal: typeof item.subtotal === 'number' ? item.subtotal : (item.price * item.quantity - (item.discountAmount ?? item.discount ?? 0)),
               })) || []}
+              subtotal={lastSaleData.subtotal}
+              itemDiscount={lastSaleData.totalDiscount}
+              generalDiscount={lastSaleData.descuentoGeneral || 0}
+              ahorroTotal={(lastSaleData.totalDiscount || 0) + (lastSaleData.descuentoGeneral || 0)}
               total={lastSaleData.total}
-              generalDiscount={lastSaleData.discountValue || 0}
               paymentBreakdown={[
                 lastSaleData.amountCash > 0 ? {
-                  type: 'efectivo',
+                  type: 'efectivo' as const,
                   amount: lastSaleData.amountCash
-                } : null,
+                } : undefined,
                 lastSaleData.amountDigital > 0 ? {
-                  type: 'digital',
+                  type: 'digital' as const,
                   amount: lastSaleData.amountDigital,
                   method: lastSaleData.digitalType,
                   installments: lastSaleData.installments
-                } : null,
-              ].filter(Boolean)}
-              cashier={currentSession?.user_name || ''}
+                } : undefined,
+              ].filter(Boolean) as any}
+              cashier={''}
               turno={currentSession?.id || ''}
+              footerMessage={companySettings?.ticket_footer || undefined}
             />
           </div>
         )}

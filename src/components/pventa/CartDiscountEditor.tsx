@@ -9,20 +9,19 @@ export interface CartDiscountEditorProps {
 
 
 export const CartDiscountEditor: React.FC<CartDiscountEditorProps> = ({ discountType, discountValue, onChange, maxValue }) => {
-  // Local state for smooth typing
   const [localType, setLocalType] = useState(discountType);
-  const [localValue, setLocalValue] = useState(discountValue);
+  const [localValue, setLocalValue] = useState(String(discountValue));
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Sync local state when props change (only if not editing)
+  // Solo sincronizar si cambia el tipo externo o el valor externo realmente
   useEffect(() => {
     setLocalType(discountType);
   }, [discountType]);
   useEffect(() => {
-    setLocalValue(discountValue);
+    setLocalValue(String(discountValue));
   }, [discountValue]);
 
-  // Commit changes to parent only on blur or Enter
+  // Commit solo en blur o Enter
   const commit = () => {
     let val = Number(localValue);
     if (localType === 'percent') val = Math.min(100, Math.max(0, val));
@@ -37,14 +36,13 @@ export const CartDiscountEditor: React.FC<CartDiscountEditorProps> = ({ discount
         value={localType}
         onChange={e => {
           const newType = e.target.value as 'none' | 'percent' | 'amount';
-          setLocalType(newType);
-          // Reset value if type changes
           if (newType === 'none') {
-            setLocalValue(0);
+            setLocalType('none');
+            setLocalValue('0');
             onChange('none', 0);
           } else {
-            // Commit with current value
-            setTimeout(() => commit(), 0);
+            setLocalType(newType);
+            // No commit inmediato, mantiene el valor actual
           }
         }}
       >
@@ -77,7 +75,6 @@ export const CartDiscountEditor: React.FC<CartDiscountEditorProps> = ({ discount
           }}
         />
       )}
-      {/* Icono visual del tipo */}
       {localType === 'percent' && <span className="text-xs text-gray-500">%</span>}
       {localType === 'amount' && <span className="text-xs text-gray-500">$</span>}
     </div>

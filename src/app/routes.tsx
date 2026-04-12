@@ -18,7 +18,7 @@ import { OrdersView } from '../components/orders/OrdersView';
 import PedidosView from '../components/orders/PedidosView';
 import { Login } from '../components/auth/Login';
 import { PriceListsView } from '../components/price-lists/PriceListsView';
-
+import { CompanySettingsView } from '../components/company/CompanySettingsView';
 
 type DashboardStats = {
   salesToday: number;
@@ -326,6 +326,10 @@ export const router = createBrowserRouter([
             <PaymentsView />
           </div>
         ),
+      },
+      {
+        path: 'company',
+        element: <CompanySettingsView />,
       },
     ],
   },

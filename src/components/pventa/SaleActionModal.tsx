@@ -58,6 +58,11 @@ export const SaleActionModal = forwardRef<any, SaleActionModalProps>(({
   // Lista de precios
   const { priceLists } = usePriceLists();
   const [selectedPriceList, setSelectedPriceList] = useState(priceList || 'lista_1');
+  // Usar SIEMPRE los valores que vienen del carrito como base
+  const modalItems = items;
+  const modalSubtotal = subtotal;
+  const modalTotalDiscount = totalDiscount;
+  const modalTotal = total;
   // Descuento
   const [discountType, setDiscountType] = useState('none');
   const [discountValue, setDiscountValue] = useState(0);
@@ -69,10 +74,17 @@ export const SaleActionModal = forwardRef<any, SaleActionModalProps>(({
   // Validación
   const [showValidation, setShowValidation] = useState(false);
 
-  // El subtotal, descuento y total neto vienen del carrito
-  const bruto = subtotal;
-  const ahorro = totalDiscount;
-  const finalTotal = total;
+  // BASE: SIEMPRE usar el neto real del carrito
+  const bruto = modalSubtotal;
+  const descuentoPorItems = modalTotalDiscount;
+  const totalNetoBase = modalTotal; // ya viene del carrito: subtotal - descuentos por ítem
+  let descuentoGeneral = 0;
+  if (discountType === 'percent') {
+    descuentoGeneral = Math.round(totalNetoBase * (discountValue / 100));
+  } else if (discountType === 'fixed') {
+    descuentoGeneral = Math.min(discountValue, totalNetoBase);
+  }
+  const finalTotal = Math.max(0, totalNetoBase - descuentoGeneral);
 
   // Validación de pago mixto
   const paymentSum = Number(amountCash) + Number(amountDigital);
@@ -85,7 +97,8 @@ export const SaleActionModal = forwardRef<any, SaleActionModalProps>(({
     priceList: selectedPriceList,
     discountType,
     discountValue,
-    items,
+    descuentoGeneral,
+    items: modalItems,
     total: finalTotal,
     paymentMethod: amountCash > 0 && amountDigital > 0 ? 'mixto' : (amountCash > 0 ? 'efectivo' : 'digital'),
     amountCash,
@@ -345,13 +358,13 @@ export const SaleActionModal = forwardRef<any, SaleActionModalProps>(({
           Subtotal: {formatMoney(bruto)}
         </div>
         <div className="mb-2 font-bold text-right">
-          Descuento: -{formatMoney(ahorro)}
+          Descuento por ítems: -{formatMoney(descuentoPorItems)}
         </div>
-        <div className="mb-2 font-bold text-right text-green-700">
-          Ahorraste: {formatMoney(ahorro)}
+        <div className="mb-2 font-bold text-right">
+          Descuento general: -{formatMoney(descuentoGeneral)}
         </div>
         <div className="mb-4 font-bold text-right text-blue-700">
-          Total: {formatMoney(finalTotal)}
+          Total final: {formatMoney(finalTotal)}
         </div>
         <div className="flex gap-2 justify-end">
           <button className="px-4 py-2 rounded bg-gray-200" onClick={onClose}>Cancelar</button>

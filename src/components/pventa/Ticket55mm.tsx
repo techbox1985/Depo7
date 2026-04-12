@@ -19,8 +19,11 @@ export interface Ticket55mmProps {
     subtotal: number;
     discount?: number;
   }>;
-  total: number;
+  subtotal: number;
+  itemDiscount: number;
   generalDiscount?: number;
+  ahorroTotal: number;
+  total: number;
   paymentBreakdown: Array<{
     type: 'efectivo' | 'digital';
     method?: 'mercadopago' | 'transferencia' | 'tarjeta';
@@ -45,8 +48,11 @@ export const Ticket55mm: React.FC<Ticket55mmProps> = ({
   saleCode,
   clientName,
   products,
-  total,
+  subtotal,
+  itemDiscount,
   generalDiscount,
+  ahorroTotal,
+  total,
   paymentBreakdown,
   cashier,
   turno,
@@ -96,17 +102,45 @@ export const Ticket55mm: React.FC<Ticket55mmProps> = ({
             <tr key={idx}>
               <td>{p.quantity}</td>
               <td>{p.name}</td>
-              <td style={{ textAlign: 'right' }}>{Math.round(p.unitPrice)}</td>
+              <td style={{ textAlign: 'right' }}>{Math.round(p.price ?? p.unitPrice)}</td>
               <td style={{ textAlign: 'right' }}>{Math.round(p.subtotal)}</td>
             </tr>
           ))}
         </tbody>
       </table>
       <div style={{ fontSize: 11, marginTop: 6, textAlign: 'right' }}>
-        <div>Subtotal: {Math.round(products.reduce((sum, p) => sum + p.unitPrice * p.quantity, 0))}</div>
-        <div>Descuento: -{Math.round(products.reduce((sum, p) => sum + (p.discount ?? 0), 0))}</div>
-        <div style={{ color: '#15803d', fontWeight: 'bold' }}>Ahorraste: {Math.round(products.reduce((sum, p) => sum + (p.discount ?? 0), 0))}</div>
-        <div style={{ color: '#1d4ed8', fontWeight: 'bold' }}>Total: {Math.round(total)}</div>
+        {(() => {
+          // Inspección directa del shape real de los items
+          // console.log('Ticket items:', products);
+          // Subtotal bruto: suma de price * quantity (price es el precio unitario bruto)
+          const subtotalBruto = products.reduce((sum, p) => sum + (Number(p.price ?? p.unitPrice) * Number(p.quantity)), 0);
+          // Subtotal neto: si existe p.subtotal, usarlo; si no, calcular price * quantity - (discount)
+          const subtotalNeto = products.reduce((sum, p) => {
+            if (typeof p.subtotal === 'number' && !isNaN(p.subtotal)) return sum + p.subtotal;
+            // reconstruir si falta
+            const unit = Number(p.price ?? p.unitPrice);
+            const qty = Number(p.quantity);
+            const desc = Number(p.discountAmount ?? p.discount ?? 0);
+            return sum + (unit * qty - desc);
+          }, 0);
+          // Descuento por ítems: diferencia entre bruto y neto
+          const descuentoPorItems = subtotalBruto - subtotalNeto;
+          // Descuento general: prop, seguro
+          const safeGeneralDiscount = Number.isFinite(Number(generalDiscount)) ? Number(generalDiscount) : 0;
+          // Ahorraste: suma de ambos
+          const ahorroTotal = descuentoPorItems + safeGeneralDiscount;
+          // Total: prop, o bruto - ahorro
+          const safeTotal = Number.isFinite(Number(total)) ? Number(total) : subtotalBruto - ahorroTotal;
+          return <>
+            <div>Subtotal: {Math.round(subtotalBruto)}</div>
+            <div>Descuento por ítems: -{Math.round(descuentoPorItems)}</div>
+            {safeGeneralDiscount > 0 && (
+              <div>Descuento general: -{Math.round(safeGeneralDiscount)}</div>
+            )}
+            <div style={{ color: '#15803d', fontWeight: 'bold' }}>Ahorraste: {Math.round(ahorroTotal)}</div>
+            <div style={{ color: '#1d4ed8', fontWeight: 'bold' }}>Total: {Math.round(safeTotal)}</div>
+          </>;
+        })()}
       </div>
       <div style={{ fontSize: 11, marginTop: 2 }}>
         <div>Pago:</div>

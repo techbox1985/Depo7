@@ -5,6 +5,7 @@ import { cn } from '../ui/Button';
 
 
 const navOperacion = [
+  { name: 'Panel', path: '/', icon: LayoutDashboard },
   { name: 'P.Venta', path: '/pventa', icon: ShoppingCart },
   { name: 'Historial de Ventas', path: '/history', icon: FileText },
   { name: 'Cierres de Caja', path: '/closures', icon: FileText },
@@ -16,6 +17,7 @@ const navComercial = [
   { name: 'Productos', path: '/products', icon: Package },
   { name: 'Listas de Precios', path: '/price-lists', icon: ListOrdered },
   { name: 'Promociones', path: '/promotions', icon: Tag },
+  { name: 'Empresa', path: '/company', icon: Package },
 ];
 const navAbastecimiento = [
   { name: 'Pedidos', path: '/orders', icon: FileText },
