@@ -1,3 +1,4 @@
+import StaffView from '../components/staff/StaffView';
 import CustomersView from '../components/customers/CustomersView';
 import PVenta from '../components/pventa';
 import PaymentsView from '../components/payments/PaymentsView';
@@ -8,7 +9,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { Header } from '../components/layout/Header';
 import { Sidebar } from '../components/layout/Sidebar';
-import { POSView } from '../components/pos/POSView';
+
 import ProductGrid from '../components/products/ProductGrid';
 
 import { CashClosures } from '../components/cash/CashClosures';
@@ -261,6 +262,10 @@ export const router = createBrowserRouter([
       {
         path: 'customers',
         element: <CustomersView />,
+      },
+      {
+        path: 'staff',
+        element: <StaffView />,
       },
       {
         index: true,

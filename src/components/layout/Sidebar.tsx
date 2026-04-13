@@ -18,11 +18,12 @@ const navComercial = [
   { name: 'Listas de Precios', path: '/price-lists', icon: ListOrdered },
   { name: 'Promociones', path: '/promotions', icon: Tag },
   { name: 'Empresa', path: '/company', icon: Package },
+  { name: 'Staff', path: '/staff', icon: LayoutDashboard },
 ];
 const navAbastecimiento = [
   { name: 'Pedidos', path: '/orders', icon: FileText },
   { name: 'Compras', path: '/purchases', icon: Truck },
-  { name: 'Proveedores', path: '/providers', icon: Truck },
+  // { name: 'Proveedores', path: '/providers', icon: Truck },
 ];
 
 export const Sidebar: React.FC = () => {

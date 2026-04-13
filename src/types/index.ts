@@ -1,3 +1,4 @@
+export * from './userProfile';
 export interface PriceList {
   id: string;
   code: string;
