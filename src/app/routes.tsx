@@ -10,6 +10,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { Header } from '../components/layout/Header';
 import { Sidebar } from '../components/layout/Sidebar';
+import { useCurrentUserProfile } from '../hooks/useCurrentUserProfile';
+import RestrictedCatalogView from '../components/ui/RestrictedCatalogView';
 
 import ProductGrid from '../components/products/ProductGrid';
 
@@ -199,6 +201,7 @@ const AppLayout = () => {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const { profile } = useCurrentUserProfile();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -225,6 +228,11 @@ const AppLayout = () => {
 
   if (!session) return <Login />;
 
+  // Si el rol es vendedor o chofer, no mostrar sidebar ni layout admin
+  if (profile && (profile.role === 'vendedor' || profile.role === 'chofer')) {
+    return <RestrictedCatalogView />;
+  }
+
   return (
     <div className="flex h-screen flex-col bg-gray-50 overflow-hidden">
       <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen} />
@@ -236,8 +244,7 @@ const AppLayout = () => {
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
-        
-        {/* Sidebar */}
+        {/* Sidebar solo para roles con backoffice */}
         <div className={`
           fixed inset-y-0 left-0 z-20 w-64 bg-white transform transition-transform duration-300 ease-in-out flex flex-col h-full
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -246,7 +253,6 @@ const AppLayout = () => {
             <Sidebar />
           </div>
         </div>
-        
         <main className={`flex-1 overflow-y-auto relative z-10 transition-all duration-300 ${!isSidebarOpen ? 'ml-0!' : 'lg:ml-64'}`}>
           <Outlet />
         </main>

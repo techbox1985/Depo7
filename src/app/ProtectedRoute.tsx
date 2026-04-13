@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useCurrentUserProfile } from '../hooks/useCurrentUserProfile';
 import { canAccessRoute } from '../utils/rolePermissions';
-import RestrictedAccess from '../components/ui/RestrictedAccess';
+import RestrictedCatalogView from '../components/ui/RestrictedCatalogView';
 
 interface ProtectedRouteProps {
   path: string;
@@ -18,12 +18,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path }) => {
   if (!profile) return <Navigate to="/login" state={{ from: location }} replace />;
 
   // Fallback para roles no implementados
+
   if (fallbackRoles.includes(profile.role)) {
-    return <RestrictedAccess />;
+    // Renderizar catálogo restringido en vez de acceso restringido
+    return <RestrictedCatalogView />;
   }
 
+
   if (!canAccessRoute(profile.role, path)) {
-    return <RestrictedAccess />;
+    // Si no tiene acceso, mostrar catálogo restringido
+    return <RestrictedCatalogView />;
   }
 
   return <Outlet />;
