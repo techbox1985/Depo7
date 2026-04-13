@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { ShoppingCart, Package, Tag, LayoutDashboard, Truck, FileText, ListOrdered, Keyboard } from 'lucide-react';
 import { cn } from '../ui/Button';
-
+import { useCurrentUserProfile } from '../../hooks/useCurrentUserProfile';
+import { canSeeMenu } from '../../utils/rolePermissions';
 
 const navOperacion = [
   { name: 'Panel', path: '/', icon: LayoutDashboard },
@@ -27,12 +29,18 @@ const navAbastecimiento = [
 ];
 
 export const Sidebar: React.FC = () => {
+  const { profile, loading } = useCurrentUserProfile();
+  const role = profile?.role;
+
+  if (loading) return null;
+  if (!role) return null;
+
   return (
     <aside className="flex flex-col w-64 border-r border-gray-200 bg-white h-full relative z-10">
-      <nav className="flex-1 space-y-1 px-2 pt-16 pb-4"> {/* pt-16: menú realmente más abajo */}
+      <nav className="flex-1 space-y-1 px-2 pt-16 pb-4">
         {/* OPERACIÓN */}
         <div className="mb-4 px-2 text-base font-bold text-gray-700 uppercase tracking-widest">OPERACIÓN</div>
-        {navOperacion.map((item) => {
+        {navOperacion.filter(item => canSeeMenu(role, item.path)).map((item) => {
           const Icon = item.icon;
           return (
             <NavLink
@@ -64,7 +72,7 @@ export const Sidebar: React.FC = () => {
         <div className="my-6 border-t border-gray-300" />
         {/* COMERCIAL */}
         <div className="mb-4 px-2 text-base font-bold text-gray-700 uppercase tracking-widest">COMERCIAL</div>
-        {navComercial.map((item) => {
+        {navComercial.filter(item => canSeeMenu(role, item.path)).map((item) => {
           const Icon = item.icon;
           return (
             <NavLink
@@ -96,7 +104,7 @@ export const Sidebar: React.FC = () => {
         <div className="my-6 border-t border-gray-300" />
         {/* ABASTECIMIENTO */}
         <div className="mb-4 px-2 text-base font-bold text-gray-700 uppercase tracking-widest">ABASTECIMIENTO</div>
-        {navAbastecimiento.map((item) => {
+        {navAbastecimiento.filter(item => canSeeMenu(role, item.path)).map((item) => {
           const Icon = item.icon;
           return (
             <NavLink

@@ -5,6 +5,7 @@ import PaymentsView from '../components/payments/PaymentsView';
 import { ExpensesGeneralPanel } from '../components/expenses/ExpensesGeneralPanel';
 import React from 'react';
 import { createBrowserRouter, Outlet } from 'react-router-dom';
+import { ProtectedRoute } from './ProtectedRoute';
 import { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { Header } from '../components/layout/Header';
@@ -260,81 +261,23 @@ export const router = createBrowserRouter([
     element: <AppLayout />,
     children: [
       {
-        path: 'customers',
-        element: <CustomersView />,
-      },
-      {
-        path: 'staff',
-        element: <StaffView />,
-      },
-      {
-        index: true,
-        element: <DashboardHome />,
-      },
-      // POS viejo eliminado
-      {
-        path: 'products',
-        element: (
-          <div className="p-8">
-            <ProductGrid />
-          </div>
-        ),
-      },
-      {
-        path: 'promotions',
-        element: <PromotionsManager />,
-      },
-      {
-        path: 'history',
-        element: <OrdersView />,
-      },
-      {
-        path: 'closures',
-        element: <CashClosures />,
-      },
-      {
-        path: 'orders',
-        element: <PedidosView />,
-      },
-      {
-        path: 'purchases',
-        element: <PurchasesList />,
-      },
-      {
-        path: 'price-lists',
-        element: (
-          <div className="p-8">
-            <PriceListsView />
-          </div>
-        ),
-      },
-      {
-        path: 'expenses',
-        element: (
-          <div className="p-8">
-            <ExpensesGeneralPanel />
-          </div>
-        ),
-      },
-      {
-        path: 'pventa',
-        element: (
-          <div className="p-8">
-            <PVenta />
-          </div>
-        ),
-      },
-      {
-        path: 'payments',
-        element: (
-          <div className="p-8">
-            <PaymentsView />
-          </div>
-        ),
-      },
-      {
-        path: 'company',
-        element: <CompanySettingsView />,
+        element: <ProtectedRoute path="/" />, // Protege todas las rutas hijas
+        children: [
+          { index: true, element: <DashboardHome /> },
+          { path: 'customers', element: <CustomersView /> },
+          { path: 'staff', element: <StaffView /> },
+          { path: 'products', element: <div className="p-8"><ProductGrid /></div> },
+          { path: 'promotions', element: <PromotionsManager /> },
+          { path: 'history', element: <OrdersView /> },
+          { path: 'closures', element: <CashClosures /> },
+          { path: 'orders', element: <PedidosView /> },
+          { path: 'purchases', element: <PurchasesList /> },
+          { path: 'price-lists', element: <div className="p-8"><PriceListsView /></div> },
+          { path: 'expenses', element: <div className="p-8"><ExpensesGeneralPanel /></div> },
+          { path: 'pventa', element: <div className="p-8"><PVenta /></div> },
+          { path: 'payments', element: <div className="p-8"><PaymentsView /></div> },
+          { path: 'company', element: <CompanySettingsView /> },
+        ],
       },
     ],
   },
