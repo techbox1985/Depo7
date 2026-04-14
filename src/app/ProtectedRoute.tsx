@@ -1,6 +1,9 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useCurrentUserProfile } from '../hooks/useCurrentUserProfile';
+function isProfileIncomplete(profile: any) {
+  return !profile?.full_name || !profile?.phone || !profile?.role;
+}
 import { canAccessRoute } from '../utils/rolePermissions';
 import RestrictedCatalogView from '../components/ui/RestrictedCatalogView';
 
@@ -16,6 +19,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path }) => {
 
   if (loading) return null;
   if (!profile) return <Navigate to="/login" state={{ from: location }} replace />;
+  if (isProfileIncomplete(profile) && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
+  }
 
   // Fallback para roles no implementados
 

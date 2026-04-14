@@ -15,6 +15,7 @@ import { useCurrentUserProfile } from '../hooks/useCurrentUserProfile';
 import RestrictedCatalogView from '../components/ui/RestrictedCatalogView';
 import MisPedidosView from '../components/orders/MisPedidosView';
 import SellerOrderView from '../components/orders/SellerOrderView';
+import OnboardingProfile from '../components/auth/OnboardingProfile';
 
 import ProductGrid from '../components/products/ProductGrid';
 
@@ -292,6 +293,11 @@ const AppLayout = () => {
 };
 
 export const router = createBrowserRouter([
+  // Ruta onboarding aislada, fuera de layouts
+  {
+    path: '/onboarding',
+    element: <OnboardingProfile />,
+  },
   {
     path: '/',
     element: <AppLayout />,
