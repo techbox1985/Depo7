@@ -1,7 +1,9 @@
 
+
 import { supabase } from './supabaseClient';
 import { CartItem, Sale } from '../types';
 import { offlineDb } from './offlineDb';
+import { supabase as supabaseClient } from './supabaseClient';
 
 export interface CreateSaleSupabaseParams {
   items: CartItem[];
@@ -48,6 +50,16 @@ export const salesService = {
     const tipoDigital = null;
     const tipoDescuento = 'ninguno';
     const cuotas = null;
+
+    // Obtener el usuario actual para seller_user_id
+    let seller_user_id = null;
+    try {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (user) seller_user_id = user.id;
+    } catch (e) {
+      console.warn('No se pudo obtener el usuario actual para seller_user_id', e);
+    }
+
     const salePayload = {
       codigo_venta,
       cliente_id: customerId || null,
@@ -72,6 +84,7 @@ export const salesService = {
       loaded_at: null,
       delivered_at: null,
       delivery_date: null,
+      seller_user_id,
     };
     // [DIAG salesService] Log de salePayload y caja_id
     console.log('[DIAG salesService] salePayload:', salePayload);

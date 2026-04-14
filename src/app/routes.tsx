@@ -12,6 +12,7 @@ import { Header } from '../components/layout/Header';
 import { Sidebar } from '../components/layout/Sidebar';
 import { useCurrentUserProfile } from '../hooks/useCurrentUserProfile';
 import RestrictedCatalogView from '../components/ui/RestrictedCatalogView';
+import MisPedidosView from '../components/orders/MisPedidosView';
 
 import ProductGrid from '../components/products/ProductGrid';
 
@@ -229,7 +230,29 @@ const AppLayout = () => {
   if (!session) return <Login />;
 
   // Si el rol es vendedor o chofer, no mostrar sidebar ni layout admin
-  if (profile && (profile.role === 'vendedor' || profile.role === 'chofer')) {
+  if (profile && profile.role === 'vendedor') {
+    // Vendedor: catálogo + Mis pedidos
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <header className="w-full bg-white shadow-sm px-6 py-4 flex flex-col sm:flex-row items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:mb-0">Catálogo de Productos</h1>
+          <nav className="flex gap-4">
+            <a href="#catalogo" className="text-indigo-700 font-semibold">Catálogo</a>
+            <a href="#mis-pedidos" className="text-indigo-700 font-semibold">Mis pedidos</a>
+          </nav>
+        </header>
+        <main className="flex-1 p-6">
+          <section id="catalogo">
+            <RestrictedCatalogView />
+          </section>
+          <section id="mis-pedidos" className="mt-12">
+            <MisPedidosView />
+          </section>
+        </main>
+      </div>
+    );
+  }
+  if (profile && profile.role === 'chofer') {
     return <RestrictedCatalogView />;
   }
 
