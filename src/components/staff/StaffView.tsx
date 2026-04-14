@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useUserProfiles } from '../../hooks/useUserProfiles';
+import { useCurrentUserProfile } from '../../hooks/useCurrentUserProfile';
 import { UserProfile } from '../../types';
 import EditStaffModal from './EditStaffModal.tsx';
 
@@ -57,6 +58,7 @@ function StatusBadge({ active }: { active: boolean }) {
 
 export default function StaffView() {
   const { profiles, loading, error, saveProfile } = useUserProfiles();
+  const { profile, refetchProfile } = useCurrentUserProfile();
   const [editUser, setEditUser] = useState<UserProfile | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -174,6 +176,10 @@ export default function StaffView() {
           onClose={() => setEditUser(null)}
           onSave={async (updates: Partial<UserProfile>) => {
             await saveProfile(editUser.id, updates);
+            // Si el usuario editado es el autenticado, forzar refetch global
+            if (editUser.id === profile?.id) {
+              await refetchProfile();
+            }
             setEditUser(null);
           }}
         />
