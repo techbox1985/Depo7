@@ -1,3 +1,4 @@
+import VendedorLayout from '../components/layout/VendedorLayout';
 import StaffView from '../components/staff/StaffView';
 import CustomersView from '../components/customers/CustomersView';
 import PVenta from '../components/pventa';
