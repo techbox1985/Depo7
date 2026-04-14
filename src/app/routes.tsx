@@ -14,6 +14,7 @@ import { Sidebar } from '../components/layout/Sidebar';
 import { useCurrentUserProfile } from '../hooks/useCurrentUserProfile';
 import RestrictedCatalogView from '../components/ui/RestrictedCatalogView';
 import MisPedidosView from '../components/orders/MisPedidosView';
+import SellerOrderView from '../components/orders/SellerOrderView';
 
 import ProductGrid from '../components/products/ProductGrid';
 
@@ -295,14 +296,12 @@ export const router = createBrowserRouter([
     path: '/',
     element: <AppLayout />,
     children: [
-      // Rutas vendedor
+      // Rutas vendedor (solo vendedor, layout reducido, pero sin rutas hijas directas)
       {
         path: '',
         element: <VendedorLayout />,
-        children: [
-          { path: 'products', element: <ProductGrid /> },
-          { path: 'mis-pedidos', element: <MisPedidosView /> },
-        ],
+        // No define rutas hijas, solo sirve para layout si el vendedor entra por /catalog o /mis-pedidos
+        handle: { onlyRole: 'vendedor' },
       },
       // Resto de rutas protegidas
       {
@@ -316,6 +315,10 @@ export const router = createBrowserRouter([
           { path: 'closures', element: <CashClosures /> },
           { path: 'orders', element: <PedidosView /> },
           { path: 'purchases', element: <PurchasesList /> },
+          { path: 'products', element: <ProductGrid /> },
+          { path: 'catalog', element: <RestrictedCatalogView /> },
+          { path: 'mis-pedidos', element: <MisPedidosView /> },
+          { path: 'nuevo-pedido', element: <SellerOrderView /> },
           { path: 'price-lists', element: <div className="p-8"><PriceListsView /></div> },
           { path: 'expenses', element: <div className="p-8"><ExpensesGeneralPanel /></div> },
           { path: 'pventa', element: <div className="p-8"><PVenta /></div> },

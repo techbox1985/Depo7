@@ -7,7 +7,7 @@ export const rolePermissions = {
   superadmin: {
     menu: [
       '/', '/pventa', '/history', '/closures', '/expenses', '/payments',
-      '/customers', '/products', '/mis-pedidos', '/price-lists', '/promotions', '/company', '/staff',
+      '/customers', '/products', '/catalog', '/mis-pedidos', '/price-lists', '/promotions', '/company', '/staff',
       '/orders', '/purchases', // '/providers' (si se habilita)
     ],
     routes: 'all',
@@ -43,8 +43,8 @@ export const rolePermissions = {
     ],
   },
   vendedor: {
-    menu: ['/products', '/mis-pedidos'],
-    routes: ['/products', '/mis-pedidos'],
+    menu: ['/catalog', '/mis-pedidos'],
+    routes: ['/catalog', '/mis-pedidos'],
   },
   chofer: {
     menu: [], // No ve backoffice

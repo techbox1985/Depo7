@@ -1,11 +1,11 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabaseClient';
 import { useCurrentUserProfile } from '../../hooks/useCurrentUserProfile';
 import { OrderDetailsModal } from './OrderDetailsModal';
 import { Button } from '../ui/Button';
 import { useCartStore } from '../../store/useCartStore';
-import { SaleActionModal } from '../pventa/SaleActionModal';
 
 const formatMoney = (value: number) => `$${Math.round(Number(value || 0)).toLocaleString('es-AR')}`;
 
@@ -15,7 +15,7 @@ export const MisPedidosView = () => {
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<any>(null);
-  const [pedidoModalOpen, setPedidoModalOpen] = useState(false);
+  const navigate = useNavigate();
   const { clearCart, items, subtotal, totalDiscount, total } = useCartStore();
 
   const fetchPedidos = useCallback(async () => {
@@ -44,28 +44,10 @@ export const MisPedidosView = () => {
   // Handler para crear nuevo pedido
   const handleNuevoPedido = () => {
     clearCart();
-    setPedidoModalOpen(true);
+    navigate('/nuevo-pedido');
   };
 
-  // Handler para guardar pedido
-  const handleConfirmPedido = async (data: any) => {
-    try {
-      // Guardar pedido usando salesService
-      await import('../../services/salesService').then(m => m.salesService.createSaleSupabase({
-        items: data.items,
-        total: data.total,
-        customerId: data.customerId,
-        sale_kind: 'pedido',
-        estado: 'pendiente',
-        cajaId: null,
-      }));
-      setPedidoModalOpen(false);
-      fetchPedidos();
-      clearCart();
-    } catch (e) {
-      alert('Error al guardar el pedido');
-    }
-  };
+  // Handler para guardar pedido eliminado (ahora se hace en SellerOrderView)
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -127,17 +109,7 @@ export const MisPedidosView = () => {
           fetchPedidos();
         }}
       />
-      <SaleActionModal
-        open={pedidoModalOpen}
-        mode="pedido"
-        onClose={() => setPedidoModalOpen(false)}
-        onConfirm={handleConfirmPedido}
-        items={items}
-        subtotal={subtotal}
-        totalDiscount={totalDiscount}
-        total={total}
-        priceList={"lista_1"}
-      />
+      {/* SaleActionModal eliminado, ahora flujo es por ruta SellerOrderView */}
     </div>
   );
 };
