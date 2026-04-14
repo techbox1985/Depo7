@@ -229,26 +229,31 @@ const AppLayout = () => {
 
   if (!session) return <Login />;
 
-  // Si el rol es vendedor o chofer, no mostrar sidebar ni layout admin
+  // Si el rol es vendedor, mostrar layout estándar con sidebar y solo rutas permitidas
   if (profile && profile.role === 'vendedor') {
-    // Vendedor: catálogo + Mis pedidos
     return (
-      <div className="flex flex-col min-h-screen bg-gray-50">
-        <header className="w-full bg-white shadow-sm px-6 py-4 flex flex-col sm:flex-row items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:mb-0">Catálogo de Productos</h1>
-          <nav className="flex gap-4">
-            <a href="#catalogo" className="text-indigo-700 font-semibold">Catálogo</a>
-            <a href="#mis-pedidos" className="text-indigo-700 font-semibold">Mis pedidos</a>
-          </nav>
-        </header>
-        <main className="flex-1 p-6">
-          <section id="catalogo">
-            <RestrictedCatalogView />
-          </section>
-          <section id="mis-pedidos" className="mt-12">
-            <MisPedidosView />
-          </section>
-        </main>
+      <div className="flex h-screen flex-col bg-gray-50 overflow-hidden">
+        <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen} />
+        <div className="flex flex-1 overflow-hidden relative">
+          {/* Mobile Overlay */}
+          {isSidebarOpen && (
+            <div 
+              className="fixed inset-0 bg-gray-600 bg-opacity-75 z-20 lg:hidden"
+              onClick={() => setIsSidebarOpen(false)}
+            />
+          )}
+          <div className={`
+            fixed inset-y-0 left-0 z-20 w-64 bg-white transform transition-transform duration-300 ease-in-out flex flex-col h-full
+            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          `}>
+            <div className="flex-1 overflow-y-auto">
+              <Sidebar />
+            </div>
+          </div>
+          <main className={`flex-1 overflow-y-auto relative z-10 transition-all duration-300 ${!isSidebarOpen ? 'ml-0!' : 'lg:ml-64'}`}>
+            <Outlet />
+          </main>
+        </div>
       </div>
     );
   }

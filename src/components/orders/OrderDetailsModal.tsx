@@ -255,9 +255,11 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             Reimprimir
           </Button>
 
-          <Button type="button" variant="secondary" onClick={handleEdit}>
-            Editar
-          </Button>
+          {order.estado === 'pendiente' && (
+            <Button type="button" variant="secondary" onClick={handleEdit}>
+              Editar
+            </Button>
+          )}
 
           {!isCancelled(order.estado) && (
             <Button type="button" variant="secondary" onClick={handleCancel} disabled={actionLoading}>

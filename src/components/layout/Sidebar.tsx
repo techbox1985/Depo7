@@ -35,6 +35,46 @@ export const Sidebar: React.FC = () => {
   if (loading) return null;
   if (!role) return null;
 
+  // QUIRÚRGICO: Sidebar especial para vendedor
+  if (role === 'vendedor') {
+    return (
+      <aside className="flex flex-col w-64 border-r border-gray-200 bg-white h-full relative z-10">
+        <nav className="flex-1 space-y-1 px-2 pt-16 pb-4">
+          <div className="mb-4 px-2 text-base font-bold text-gray-700 uppercase tracking-widest">MENÚ</div>
+          <NavLink
+            to="/catalogo"
+            className={({ isActive }) =>
+              cn(
+                'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
+                isActive
+                  ? 'bg-indigo-50 text-indigo-600'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              )
+            }
+          >
+            <Package className="mr-3 h-5 w-5 shrink-0 text-gray-400 group-hover:text-gray-500" />
+            Catálogo
+          </NavLink>
+          <NavLink
+            to="/mis-pedidos"
+            className={({ isActive }) =>
+              cn(
+                'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
+                isActive
+                  ? 'bg-indigo-50 text-indigo-600'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              )
+            }
+          >
+            <FileText className="mr-3 h-5 w-5 shrink-0 text-gray-400 group-hover:text-gray-500" />
+            Mis pedidos
+          </NavLink>
+        </nav>
+      </aside>
+    );
+  }
+
+  // ...existing code...
   return (
     <aside className="flex flex-col w-64 border-r border-gray-200 bg-white h-full relative z-10">
       <nav className="flex-1 space-y-1 px-2 pt-16 pb-4">
