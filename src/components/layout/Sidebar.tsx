@@ -35,8 +35,8 @@ export const Sidebar: React.FC = () => {
   if (loading) return null;
   if (!role) return null;
 
-  // QUIRÚRGICO: Sidebar especial para vendedor
-  if (role === 'vendedor') {
+  // Sidebar especial para vendedor y superadmin (solo para pruebas de pedidos)
+  if (role === 'vendedor' || role === 'superadmin') {
     return (
       <aside className="flex flex-col w-64 border-r border-gray-200 bg-white h-full relative z-10">
         <nav className="flex-1 space-y-1 px-2 pt-16 pb-4">

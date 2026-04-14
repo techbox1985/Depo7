@@ -1,27 +1,36 @@
-import React, { useEffect, useState, useCallback } from 'react';
+
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../../services/supabaseClient';
 import { useCurrentUserProfile } from '../../hooks/useCurrentUserProfile';
 import { OrderDetailsModal } from './OrderDetailsModal';
 import { Button } from '../ui/Button';
+import { useCartStore } from '../../store/useCartStore';
+import { SaleActionModal } from '../pventa/SaleActionModal';
 
 const formatMoney = (value: number) => `$${Math.round(Number(value || 0)).toLocaleString('es-AR')}`;
+
 
 export const MisPedidosView = () => {
   const { profile } = useCurrentUserProfile();
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<any>(null);
-  const [showNewPedido, setShowNewPedido] = useState(false);
+  const [pedidoModalOpen, setPedidoModalOpen] = useState(false);
+  const { clearCart, items, subtotal, totalDiscount, total } = useCartStore();
 
   const fetchPedidos = useCallback(async () => {
     if (!profile) return;
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from('sales')
       .select('*, customers(name)')
-      .eq('sale_kind', 'pedido')
-      .eq('seller_user_id', profile.id)
-      .order('creado_en', { ascending: false });
+      .eq('sale_kind', 'pedido');
+    // Si no es superadmin, filtrar por vendedor
+    if (profile.role !== 'superadmin') {
+      query = query.eq('seller_user_id', profile.id);
+    }
+    query = query.order('creado_en', { ascending: false });
+    const { data, error } = await query;
     if (error) {
       console.error('Error fetching pedidos:', error);
     } else {
@@ -32,12 +41,30 @@ export const MisPedidosView = () => {
 
   useEffect(() => { fetchPedidos(); }, [fetchPedidos]);
 
-  // Handler para crear nuevo pedido (abrir modal o redirigir a flujo existente)
+  // Handler para crear nuevo pedido
   const handleNuevoPedido = () => {
-    // Si existe un flujo/modal de creación, aquí se debería abrir
-    // Por ahora, redirigir a /pventa con flag especial
-    localStorage.setItem('nuevo_pedido', '1');
-    window.location.href = '/pventa';
+    clearCart();
+    setPedidoModalOpen(true);
+  };
+
+  // Handler para guardar pedido
+  const handleConfirmPedido = async (data: any) => {
+    try {
+      // Guardar pedido usando salesService
+      await import('../../services/salesService').then(m => m.salesService.createSaleSupabase({
+        items: data.items,
+        total: data.total,
+        customerId: data.customerId,
+        sale_kind: 'pedido',
+        estado: 'pendiente',
+        cajaId: null,
+      }));
+      setPedidoModalOpen(false);
+      fetchPedidos();
+      clearCart();
+    } catch (e) {
+      alert('Error al guardar el pedido');
+    }
   };
 
   return (
@@ -99,6 +126,17 @@ export const MisPedidosView = () => {
           setSelected(null);
           fetchPedidos();
         }}
+      />
+      <SaleActionModal
+        open={pedidoModalOpen}
+        mode="pedido"
+        onClose={() => setPedidoModalOpen(false)}
+        onConfirm={handleConfirmPedido}
+        items={items}
+        subtotal={subtotal}
+        totalDiscount={totalDiscount}
+        total={total}
+        priceList={"lista_1"}
       />
     </div>
   );

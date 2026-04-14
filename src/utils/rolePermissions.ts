@@ -7,7 +7,7 @@ export const rolePermissions = {
   superadmin: {
     menu: [
       '/', '/pventa', '/history', '/closures', '/expenses', '/payments',
-      '/customers', '/products', '/price-lists', '/promotions', '/company', '/staff',
+      '/customers', '/products', '/mis-pedidos', '/price-lists', '/promotions', '/company', '/staff',
       '/orders', '/purchases', // '/providers' (si se habilita)
     ],
     routes: 'all',
