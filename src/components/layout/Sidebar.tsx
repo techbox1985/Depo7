@@ -42,7 +42,7 @@ export const Sidebar: React.FC = () => {
         <nav className="flex-1 space-y-1 px-2 pt-16 pb-4">
           <div className="mb-4 px-2 text-base font-bold text-gray-700 uppercase tracking-widest">MENÚ</div>
           <NavLink
-            to="/catalogo"
+            to="/products"
             className={({ isActive }) =>
               cn(
                 'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',

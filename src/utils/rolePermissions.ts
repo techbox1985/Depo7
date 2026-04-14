@@ -43,8 +43,8 @@ export const rolePermissions = {
     ],
   },
   vendedor: {
-    menu: ['/catalogo', '/mis-pedidos'],
-    routes: ['/catalogo', '/mis-pedidos'],
+    menu: ['/products', '/mis-pedidos'],
+    routes: ['/products', '/mis-pedidos'],
   },
   chofer: {
     menu: [], // No ve backoffice

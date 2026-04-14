@@ -301,6 +301,7 @@ export const router = createBrowserRouter([
           { path: 'customers', element: <CustomersView /> },
           { path: 'staff', element: <StaffView /> },
           { path: 'products', element: <div className="p-8"><ProductGrid /></div> },
+          { path: 'mis-pedidos', element: <MisPedidosView /> },
           { path: 'promotions', element: <PromotionsManager /> },
           { path: 'history', element: <OrdersView /> },
           { path: 'closures', element: <CashClosures /> },
