@@ -300,7 +300,7 @@ export const router = createBrowserRouter([
           { index: true, element: <DashboardHome /> },
           { path: 'customers', element: <CustomersView /> },
           { path: 'staff', element: <StaffView /> },
-          { path: 'products', element: <div className="p-8"><ProductGrid /></div> },
+          { path: 'products', element: <ProductGrid /> },
           { path: 'mis-pedidos', element: <MisPedidosView /> },
           { path: 'promotions', element: <PromotionsManager /> },
           { path: 'history', element: <OrdersView /> },
