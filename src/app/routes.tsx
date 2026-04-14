@@ -296,7 +296,10 @@ export const router = createBrowserRouter([
   // Ruta onboarding aislada, fuera de layouts
   {
     path: '/onboarding',
-    element: <OnboardingProfile />,
+    element: <ProtectedRoute path="/onboarding" />,
+    children: [
+      { index: true, element: <OnboardingProfile /> },
+    ],
   },
   {
     path: '/',

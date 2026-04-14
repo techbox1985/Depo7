@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { updateUserProfile } from '../../services/userProfilesService';
 import { useCurrentUserProfile } from '../../hooks/useCurrentUserProfile';
+import { useNavigate } from 'react-router-dom';
 import { useCompanySettingsHeader } from '../../hooks/useCompanySettingsHeader';
 import { OnlineStatusIndicator } from '../OnlineStatusIndicator';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 
 const OnboardingProfile: React.FC = () => {
-  const { profile, loading } = useCurrentUserProfile();
+  const { profile, loading, refetchProfile } = useCurrentUserProfile();
+  const navigate = useNavigate();
   const { company } = useCompanySettingsHeader();
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [phone, setPhone] = useState(profile?.phone || '');
@@ -15,8 +17,22 @@ const OnboardingProfile: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState<boolean | null>(null);
 
+
   if (loading) return null;
   if (!profile) return null;
+  // Si el perfil ya está completo, redirigir fuera de onboarding
+  if (profile.full_name && profile.phone && profile.role) {
+    setTimeout(() => {
+      if (profile.role === 'vendedor') {
+        navigate('/catalog', { replace: true });
+      } else if (profile.role === 'chofer') {
+        navigate('/catalog', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
+    }, 0);
+    return null;
+  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +49,17 @@ const OnboardingProfile: React.FC = () => {
     setSaving(true);
     try {
       await updateUserProfile(profile.id, { full_name: fullName, phone });
+      await refetchProfile();
       setSuccess(true);
+      setTimeout(() => {
+        if (profile.role === 'vendedor') {
+          navigate('/catalog', { replace: true });
+        } else if (profile.role === 'chofer') {
+          navigate('/catalog', { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
+      }, 500);
     } catch (e) {
       setError('Error al guardar los datos.');
       setSuccess(false);

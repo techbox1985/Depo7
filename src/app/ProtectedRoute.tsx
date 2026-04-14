@@ -22,6 +22,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path }) => {
   if (isProfileIncomplete(profile) && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />;
   }
+  // Si el perfil ya está completo y está en /onboarding, redirigir fuera
+  if (!isProfileIncomplete(profile) && location.pathname === '/onboarding') {
+    if (profile.role === 'vendedor' || profile.role === 'chofer') {
+      return <Navigate to="/catalog" replace />;
+    }
+    return <Navigate to="/" replace />;
+  }
 
   // Fallback para roles no implementados
 
