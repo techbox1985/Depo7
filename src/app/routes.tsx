@@ -295,27 +295,24 @@ const AppLayout = () => {
 export const router = createBrowserRouter([
   // Ruta onboarding aislada, fuera de layouts
   {
-    path: '/onboarding',
-    element: <ProtectedRoute path="/onboarding" />,
-    children: [
-      { index: true, element: <OnboardingProfile /> },
-    ],
-  },
-  {
     path: '/',
-    element: <AppLayout />,
+    element: <ProtectedRoute path="/" />, // Protege toda la app salvo login
     children: [
-      // Rutas vendedor (solo vendedor, layout reducido, pero sin rutas hijas directas)
+      {
+        path: 'onboarding',
+        element: <OnboardingProfile />,
+      },
       {
         path: '',
-        element: <VendedorLayout />,
-        // No define rutas hijas, solo sirve para layout si el vendedor entra por /catalog o /mis-pedidos
-        handle: { onlyRole: 'vendedor' },
-      },
-      // Resto de rutas protegidas
-      {
-        element: <ProtectedRoute path="/" />, // Protege todas las rutas hijas
+        element: <AppLayout />,
         children: [
+          // Rutas vendedor (solo vendedor, layout reducido, pero sin rutas hijas directas)
+          {
+            path: '',
+            element: <VendedorLayout />,
+            handle: { onlyRole: 'vendedor' },
+          },
+          // Resto de rutas protegidas
           { index: true, element: <DashboardHome /> },
           { path: 'customers', element: <CustomersView /> },
           { path: 'staff', element: <StaffView /> },
@@ -336,5 +333,9 @@ export const router = createBrowserRouter([
         ],
       },
     ],
+  },
+  {
+    path: '/login',
+    element: <Login />,
   },
 ]);

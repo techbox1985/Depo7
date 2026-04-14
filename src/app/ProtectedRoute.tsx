@@ -19,7 +19,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path }) => {
 
   if (loading) return null;
   if (!profile) return <Navigate to="/login" state={{ from: location }} replace />;
-  if (isProfileIncomplete(profile) && location.pathname !== '/onboarding') {
+  if (isProfileIncomplete(profile) && !location.pathname.startsWith('/onboarding')) {
     return <Navigate to="/onboarding" replace />;
   }
   // Si el perfil ya está completo y está en /onboarding, redirigir fuera

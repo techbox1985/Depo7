@@ -23,10 +23,20 @@ const OnboardingProfile: React.FC = () => {
   // Si el perfil ya está completo, redirigir fuera de onboarding
   if (profile.full_name && profile.phone && profile.role) {
     setTimeout(() => {
-      if (profile.role === 'vendedor') {
+      if (profile.role === 'superadmin') {
+        navigate('/', { replace: true });
+      } else if (profile.role === 'admin') {
+        navigate('/', { replace: true });
+      } else if (profile.role === 'oficina') {
+        navigate('/', { replace: true });
+      } else if (profile.role === 'vendedor') {
         navigate('/catalog', { replace: true });
+      } else if (profile.role === 'cliente') {
+        navigate('/catalog', { replace: true });
+      } else if (profile.role === 'cajero') {
+        navigate('/', { replace: true });
       } else if (profile.role === 'chofer') {
-        navigate('/catalog', { replace: true });
+        navigate('/', { replace: true });
       } else {
         navigate('/', { replace: true });
       }
