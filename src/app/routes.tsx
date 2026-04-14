@@ -294,14 +294,22 @@ export const router = createBrowserRouter([
     path: '/',
     element: <AppLayout />,
     children: [
+      // Rutas vendedor
+      {
+        path: '',
+        element: <VendedorLayout />,
+        children: [
+          { path: 'products', element: <ProductGrid /> },
+          { path: 'mis-pedidos', element: <MisPedidosView /> },
+        ],
+      },
+      // Resto de rutas protegidas
       {
         element: <ProtectedRoute path="/" />, // Protege todas las rutas hijas
         children: [
           { index: true, element: <DashboardHome /> },
           { path: 'customers', element: <CustomersView /> },
           { path: 'staff', element: <StaffView /> },
-          { path: 'products', element: <ProductGrid /> },
-          { path: 'mis-pedidos', element: <MisPedidosView /> },
           { path: 'promotions', element: <PromotionsManager /> },
           { path: 'history', element: <OrdersView /> },
           { path: 'closures', element: <CashClosures /> },
