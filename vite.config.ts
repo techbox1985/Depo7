@@ -14,8 +14,8 @@ export default defineConfig(({mode}) => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'icon-192.svg', 'icon-512.svg'],
         manifest: {
-          name: 'SHW POS',
-          short_name: 'SHW POS',
+          name: 'Depo7 POS',
+          short_name: 'Depo7 POS',
           description: 'Sistema de Punto de Venta',
           theme_color: '#ffffff',
           background_color: '#ffffff',

@@ -1,6 +1,6 @@
 import { openDB, IDBPDatabase } from 'idb';
 
-const DB_NAME = 'shw-pos-db';
+const DB_NAME = 'depo7-pos-db';
 const DB_VERSION = 2;
 
 export const STORES = {

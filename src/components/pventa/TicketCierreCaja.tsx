@@ -8,7 +8,7 @@ export const TicketCierreCaja = ({ cierre, ventas, gastos }) => {
     <div style={{ width: 300, fontFamily: 'monospace', fontSize: 13 }}>
       <div style={{ textAlign: 'center', marginBottom: 8 }}>
         <img src="/logo.png" alt="logo" style={{ maxWidth: 80, margin: '0 auto' }} />
-        <div><b>Distribuidora SHW</b></div>
+        <div><b>Depo7</b></div>
         <div>CUIT: 30-00000000-0</div>
         <div>Av. Ejemplo 123</div>
       </div>

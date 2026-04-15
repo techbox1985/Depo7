@@ -86,7 +86,7 @@ const OnboardingProfile: React.FC = () => {
           alt="Logo"
           className="h-20 w-20 object-contain rounded mb-2 bg-white border"
         />
-        <div className="text-2xl font-bold text-gray-900 mb-1">{company?.company_name || 'Distribuidora SHW'}</div>
+        <div className="text-2xl font-bold text-gray-900 mb-1">{company?.company_name || 'Depo7'}</div>
         <OnlineStatusIndicator />
       </div>
       <form className="bg-white p-8 rounded-xl shadow-xl w-full max-w-md flex flex-col gap-6" onSubmit={handleSave}>

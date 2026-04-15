@@ -81,7 +81,7 @@ export const ProductCard: React.FC<ProductCardProps & { promotions: any[]; price
           <div className={`flex h-full w-full items-center justify-center bg-white p-6 ${isOutOfStock ? 'grayscale opacity-60' : ''}`}>
             <img
               src={SHW_LOGO_URL}
-              alt="SHW Distribuidora"
+              alt="Depo7"
               className="h-full w-full object-contain opacity-25"
               referrerPolicy="no-referrer"
               loading="lazy"

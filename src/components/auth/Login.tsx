@@ -97,7 +97,7 @@ export const Login: React.FC = () => {
           </Button>
           {!showForm && (
             <h2 className="mt-6 text-center text-xl font-medium tracking-tight text-gray-500 uppercase tracking-widest">
-              Distribuidora
+              Depo7
             </h2>
           )
           }
@@ -119,7 +119,7 @@ export const Login: React.FC = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="ejemplo@shw.com"
+                placeholder="ejemplo@depo7.com"
               />
               <Input
                 label="Contraseña"

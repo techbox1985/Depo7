@@ -412,7 +412,7 @@ export const ProductGrid: React.FC = React.memo(() => {
                                 typedProduct.image_url ||
                                 'https://cdn.vectorstock.com/i/500p/98/75/shw-logo-design-template-with-strong-and-modern-vector-50999875.jpg'
                               }
-                              alt=""
+                              alt={typedProduct.name}
                               loading="lazy"
                               referrerPolicy="no-referrer"
                             />
