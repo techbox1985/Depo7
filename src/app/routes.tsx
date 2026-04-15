@@ -206,6 +206,10 @@ const AppLayout = () => {
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { profile } = useCurrentUserProfile();
+  useEffect(() => {
+    console.log('AppLayout session:', session);
+    console.log('AppLayout profile:', profile);
+  }, [session, profile]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {

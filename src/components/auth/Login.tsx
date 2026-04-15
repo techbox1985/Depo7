@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabaseClient';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { AlertCircle, EyeOff } from 'lucide-react';
+import { useCompanySettingsHeader } from '../../hooks/useCompanySettingsHeader';
 
 export const Login: React.FC = () => {
   const [clickCount, setClickCount] = useState(0);
@@ -11,6 +13,8 @@ export const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { company } = useCompanySettingsHeader();
 
   // Reset click count if not clicked for 2 seconds
   useEffect(() => {
@@ -32,20 +36,31 @@ export const Login: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('handleLogin start');
+    console.log('Email:', email);
     if (!email || !password) {
+      console.log('Guard: email/password vacíos');
       setError('Por favor, ingresa email y contraseña.');
+      console.log('handleLogin end');
       return;
     }
-    
     setLoading(true);
     setError('');
-    
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (error) {
-      setError('Credenciales inválidas o error de conexión.');
+    try {
+      const result = await supabase.auth.signInWithPassword({ email, password });
+      console.log('Resultado signInWithPassword:', result);
+      if (result.error) {
+        setError('Credenciales inválidas o error de conexión.');
+        console.log('Error:', result.error);
+      } else if (result.data) {
+        console.log('User/session:', result.data);
+        navigate('/');
+      }
+    } catch (err) {
+      console.log('Excepción en signInWithPassword:', err);
     }
     setLoading(false);
+    console.log('handleLogin end');
   };
 
   return (
@@ -54,7 +69,7 @@ export const Login: React.FC = () => {
         <div className="flex flex-col items-center">
           <img
             className="h-32 w-auto object-contain rounded-lg cursor-pointer transition-transform active:scale-95"
-            src="https://cdn.vectorstock.com/i/500p/98/75/shw-logo-design-template-with-strong-and-modern-vector-50999875.jpg"
+            src={company?.logo_url || 'https://depo7.com/logo-depo7.png'}
             alt="Logo"
             onClick={handleLogoClick}
             title={!showForm ? "Acceso al sistema" : ""}
@@ -131,9 +146,10 @@ export const Login: React.FC = () => {
               />
             </div>
             <div className="flex flex-col gap-3">
-              <Button type="submit" className="w-full flex justify-center" isLoading={loading}>
+              {/* Botón nativo temporal para diagnóstico */}
+              <button type="submit" className="w-full flex justify-center">
                 Ingresar
-              </Button>
+              </button>
               <button 
                 type="button" 
                 onClick={() => {
